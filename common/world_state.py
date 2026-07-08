@@ -39,16 +39,28 @@ class Ball:
     """足球状态"""
     x: float = 0.0
     y: float = 0.0
+    z: float = 0.0              # 高度 (Mock 模式默认 0, 仿真/实机提供真实值)
     vx: float = 0.0
     vy: float = 0.0
+    vz: float = 0.0              # 垂直速度
 
     @property
     def position(self) -> Tuple[float, float]:
         return (self.x, self.y)
 
     @property
+    def position_3d(self) -> Tuple[float, float, float]:
+        """3D 位置 (x, y, z)"""
+        return (self.x, self.y, self.z)
+
+    @property
     def speed(self) -> float:
         return math.sqrt(self.vx ** 2 + self.vy ** 2)
+
+    @property
+    def speed_3d(self) -> float:
+        """3D 速率"""
+        return math.sqrt(self.vx ** 2 + self.vy ** 2 + self.vz ** 2)
 
     @property
     def is_moving(self) -> bool:
@@ -63,6 +75,7 @@ class Robot:
     team: Team
     x: float
     y: float
+    z: float = 0.0                 # 高度 (Mock 模式默认 0)
     theta: float = 0.0              # 朝向角度 (弧度, 0=右/东)
     role: RobotRole = RobotRole.IDLE
     kick_cooldown: float = 0.0      # 踢球冷却剩余时间
@@ -70,6 +83,11 @@ class Robot:
     @property
     def position(self) -> Tuple[float, float]:
         return (self.x, self.y)
+
+    @property
+    def position_3d(self) -> Tuple[float, float, float]:
+        """3D 位置 (x, y, z)"""
+        return (self.x, self.y, self.z)
 
 
 @dataclass
@@ -195,15 +213,21 @@ class WorldStateProvider:
         yellow_raw = sim.get_robots(Team.YELLOW)
 
         ball = Ball(x=ball_raw.x, y=ball_raw.y,
-                    vx=ball_raw.vx, vy=ball_raw.vy)
+                    z=getattr(ball_raw, 'z', 0.0),
+                    vx=ball_raw.vx, vy=ball_raw.vy,
+                    vz=getattr(ball_raw, 'vz', 0.0))
 
         teammates = [Robot(id=r.id, team=Team.BLUE,
-                           x=r.x, y=r.y, theta=r.theta,
+                           x=r.x, y=r.y,
+                           z=getattr(r, 'z', 0.0),
+                           theta=r.theta,
                            role=r.role, kick_cooldown=r.kick_cooldown)
                      for r in blue_raw]
 
         opponents = [Robot(id=r.id, team=Team.YELLOW,
-                           x=r.x, y=r.y, theta=r.theta,
+                           x=r.x, y=r.y,
+                           z=getattr(r, 'z', 0.0),
+                           theta=r.theta,
                            role=RobotRole.IDLE, kick_cooldown=r.kick_cooldown)
                      for r in yellow_raw]
 

@@ -6,7 +6,9 @@ Booster T1 多机器人足球协同决策系统 — 主程序
 基于软件工程方法实现的多机器人足球协同决策演示系统。
 
 用法:
-    python3 main.py                      # 默认演示模式
+    python3 main.py                      # 默认 Mock 模式演示
+    python3 main.py --mode mock          # Mock 模式 (自包含 2D 仿真)
+    python3 main.py --mode real          # 真实模式 (对接外部仿真器/SDK)
     python3 main.py --scenario pass      # 传球场景
     python3 main.py --scenario shoot     # 射门场景
     python3 main.py --scenario threat    # 防守场景
@@ -25,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from common.config import (
     FPS, DT, MAX_TICKS, NUM_ROBOTS_PER_TEAM,
-    FIELD_WIDTH, FIELD_HEIGHT
+    FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH
 )
 from common.world_state import (
     WorldStateProvider, SCENARIOS, WorldState, Ball, Robot, Goal, Team, RobotRole
@@ -36,6 +38,16 @@ from decision.decision_fsm import DecisionFSM
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
+
+# 真实模式桥接层 (导入失败不阻塞, 仅 --mode real 时需要)
+try:
+    from bridge.real_world_state import RealWorldStateProvider
+    from bridge.real_robot_action import RealRobotAction
+    _BRIDGE_AVAILABLE = True
+except ImportError as e:
+    RealWorldStateProvider = None
+    RealRobotAction = None
+    _BRIDGE_AVAILABLE = False
 
 
 # ================================================================
@@ -99,8 +111,8 @@ def parse_args():
         description="Booster T1 多机器人足球协同决策系统"
     )
     parser.add_argument(
-        '--mode', choices=['sim', 'mock'], default='sim',
-        help='运行模式: sim=仿真器, mock=预设场景 (默认: sim)'
+        '--mode', choices=['mock', 'real'], default='mock',
+        help='运行模式: mock=自包含2D仿真器 (默认), real=对接外部仿真器/SDK'
     )
     parser.add_argument(
         '--scenario', default='default',
@@ -144,15 +156,40 @@ def main():
     print(f"  黄方:     {NUM_ROBOTS_PER_TEAM} 机器人")
     print("=" * 60)
 
-    # 初始化
-    simulator = Simulator()
-    world_provider = WorldStateProvider(simulator)
-    robot_action = MockRobotAction(simulator)
+    # ================================================================
+    # 初始化 (根据模式选择不同的 Provider 和 Action)
+    # ================================================================
+    simulator = None  # 仅 mock 模式使用
 
-    # 初始世界状态
+    if args.mode == 'mock':
+        simulator = Simulator()
+        world_provider = WorldStateProvider(simulator)
+        robot_action = MockRobotAction(simulator)
+
+        # 预设场景
+        if args.scenario != 'default':
+            scenario_ws = SCENARIOS[args.scenario]()
+            world_provider.set_mock(scenario_ws)
+
+        print(f"  Mock 场景: {args.scenario}")
+        print(f"  仿真器:    内置 2D 物理引擎")
+
+    elif args.mode == 'real':
+        if not _BRIDGE_AVAILABLE:
+            print("  错误: bridge 模块不可用, 请检查 bridge/ 目录")
+            sys.exit(1)
+
+        # 桩代码初始化 (等接口确定后替换为真实数据源)
+        world_provider = RealWorldStateProvider(source=None)
+        robot_action = RealRobotAction(sdk_client=None)
+
+        print(f"  仿真器:    外部 (MuJoCo/Webots/实机) — 当前为桩代码")
+        print(f"  注意:      --mode real 需要项目二/三的接口就绪后才能真实运行")
+
+    # ================================================================
+    # 决策引擎 (两种模式共用)
+    # ================================================================
     world_state = world_provider.get()
-
-    # 决策引擎
     fsm = DecisionFSM(world_state, robot_action, NUM_ROBOTS_PER_TEAM)
 
     # 可视化
@@ -171,13 +208,14 @@ def main():
     start_time = time.time()
 
     # ================================================================
-    # 主循环
+    # 主循环 (两种模式共用)
     # ================================================================
     for tick in range(total_ticks):
         loop_start = time.time()
 
-        # 1. 更新物理仿真
-        simulator.update(DT)
+        # 1. 更新物理仿真 (仅 Mock 模式)
+        if args.mode == 'mock' and simulator is not None:
+            simulator.update(DT)
 
         # 2. 获取世界状态
         world_state = world_provider.get()
@@ -213,6 +251,7 @@ def main():
     print(f"  总步数:   {total_ticks}")
     print(f"  仿真时间: {args.duration}s")
     print(f"  实际耗时: {elapsed_total:.1f}s")
+    print(f"  运行模式: {args.mode}")
     print(f"{'='*60}")
 
     # 打印决策摘要

@@ -48,6 +48,10 @@ class RobotActionInterface(ABC):
         """重置所有机器人到初始位置"""
         ...
 
+    def is_moving(self, robot_id: int) -> bool:
+        """查询机器人是否正在移动 (默认 False, 子类按需覆写)"""
+        return False
+
 
 class MockRobotAction(RobotActionInterface):
     """
@@ -97,6 +101,10 @@ class MockRobotAction(RobotActionInterface):
     def reset(self):
         """重置仿真"""
         self._sim.reset()
+
+    def is_moving(self, robot_id: int) -> bool:
+        """查询机器人是否有活跃的移动目标"""
+        return robot_id in self._sim._move_targets
 
 
 class ActionCommand:

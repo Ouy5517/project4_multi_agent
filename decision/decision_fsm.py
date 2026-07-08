@@ -435,7 +435,7 @@ class DecisionFSM:
                     role=role.value,
                     x=robot.x,
                     y=robot.y,
-                    action="move" if robot_id in self._action._sim._move_targets else "wait",
+                    action="move" if self._action.is_moving(robot_id) else "wait",
                     reason=""
                 )
                 self.decision_logs.append(log)
