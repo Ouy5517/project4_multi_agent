@@ -1,0 +1,111 @@
+"""
+RobotAction 接口定义与 Mock 实现
+=================================
+定义机器人动作的抽象接口，并提供 Mock 实现用于脱离仿真器测试。
+实际对接 Booster SDK 时，只需替换为 RealRobotAction 实现。
+
+SDK 对应关系 (未来扩展):
+- move_to → B1LocoClient.Move(vx, vy, vyaw)
+- kick    → B1LocoClient.VisualKick() / Shoot()
+- turn_to → B1LocoClient.Move(0, 0, vyaw)
+"""
+
+from abc import ABC, abstractmethod
+from typing import Tuple, Optional
+import math
+from common.config import (
+    FIELD_WIDTH, FIELD_HEIGHT,
+    ROBOT_MAX_SPEED, ROBOT_KICK_RANGE, ROBOT_KICK_POWER_MAX,
+    ROBOT_KICK_COOLDOWN, KICK_POWER_SCALE
+)
+
+
+class RobotActionInterface(ABC):
+    """机器人动作抽象接口"""
+
+    @abstractmethod
+    def move_to(self, robot_id: int, x: float, y: float):
+        """命令机器人向目标坐标移动"""
+        ...
+
+    @abstractmethod
+    def turn_to(self, robot_id: int, theta: float):
+        """命令机器人转向指定角度"""
+        ...
+
+    @abstractmethod
+    def kick(self, robot_id: int, power: float, direction: float) -> bool:
+        """命令机器人踢球 (power: 0-100, direction: 弧度)"""
+        ...
+
+    @abstractmethod
+    def stop(self, robot_id: int):
+        """停止所有运动"""
+        ...
+
+    @abstractmethod
+    def reset(self):
+        """重置所有机器人到初始位置"""
+        ...
+
+
+class MockRobotAction(RobotActionInterface):
+    """
+    Mock 动作实现
+    将动作指令转发给仿真器 (Simulator)
+    """
+
+    def __init__(self, simulator):
+        self._sim = simulator
+
+    def move_to(self, robot_id: int, x: float, y: float):
+        """移动机器人到目标位置"""
+        # 裁剪到场地内
+        x = max(-FIELD_WIDTH / 2, min(FIELD_WIDTH / 2, x))
+        y = max(-FIELD_HEIGHT / 2, min(FIELD_HEIGHT / 2, y))
+        self._sim.set_move_target(robot_id, x, y)
+
+    def turn_to(self, robot_id: int, theta: float):
+        """转向指定角度"""
+        theta = theta % (2 * math.pi)
+        self._sim.set_turn_target(robot_id, theta)
+
+    def kick(self, robot_id: int, power: float, direction: float) -> bool:
+        """踢球"""
+        # 验证力度
+        power = max(0, min(ROBOT_KICK_POWER_MAX, power))
+        # 检查冷却
+        robot = self._sim.get_robot_by_id(robot_id)
+        if robot is None:
+            return False
+        if robot.kick_cooldown > 0:
+            return False
+        # 检查球是否在范围内
+        ball = self._sim.get_ball()
+        dist = math.sqrt((robot.x - ball.x) ** 2 + (robot.y - ball.y) ** 2)
+        if dist > ROBOT_KICK_RANGE:
+            return False
+
+        self._sim.queue_kick(robot_id, power, direction)
+        robot.kick_cooldown = ROBOT_KICK_COOLDOWN
+        return True
+
+    def stop(self, robot_id: int):
+        """停止移动"""
+        self._sim.clear_move_target(robot_id)
+
+    def reset(self):
+        """重置仿真"""
+        self._sim.reset()
+
+
+class ActionCommand:
+    """记录一次动作指令 (用于日志)"""
+
+    def __init__(self, robot_id: int, action_type: str, params: dict):
+        self.robot_id = robot_id
+        self.type = action_type    # "move", "turn", "kick", "stop"
+        self.params = params
+
+    def __repr__(self):
+        return f"Action({self.type}, robot={self.robot_id}, {self.params})"
