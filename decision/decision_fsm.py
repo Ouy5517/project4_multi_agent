@@ -447,6 +447,11 @@ class DecisionFSM:
     def get_state(self, robot_id: int) -> DecisionState:
         return self._fsms[robot_id].state
 
+    def get_pass_target_id(self, robot_id: int) -> Optional[int]:
+        """获取传球目标机器人 ID (PASS 状态下有效)"""
+        fsm = self._fsms.get(robot_id)
+        return fsm.pass_target_id if fsm else None
+
     def get_decision_summary(self) -> dict:
         """决策统计摘要"""
         if not self.decision_logs:

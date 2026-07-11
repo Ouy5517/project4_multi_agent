@@ -13,6 +13,9 @@ Booster T1 多机器人足球协同决策系统 — 主程序
     python3 main.py --scenario shoot     # 射门场景
     python3 main.py --scenario threat    # 防守场景
     python3 main.py --headless           # 无渲染模式 (仅日志)
+    python3 main.py --viz matplotlib     # 2D 图形可视化 (传球连线等)
+    python3 main.py --scenario pass --viz matplotlib --duration 30
+    python3 main.py --scenario pass --viz matplotlib --export-gif outputs/videos/pass.gif
     python3 main.py --duration 120       # 运行 120 秒
 """
 
@@ -125,7 +128,15 @@ def parse_args():
     )
     parser.add_argument(
         '--headless', action='store_true',
-        help='无渲染模式 (不输出 ASCII 可视化)'
+        help='无渲染模式 (不输出可视化)'
+    )
+    parser.add_argument(
+        '--viz', choices=['ascii', 'matplotlib'], default=None,
+        help='可视化方式: ascii=终端文本 (默认), matplotlib=2D图形窗口'
+    )
+    parser.add_argument(
+        '--export-gif', default=None, metavar='PATH',
+        help='将 matplotlib 可视化导出为 GIF (需 --viz matplotlib)'
     )
     parser.add_argument(
         '--log-dir', default='outputs',
@@ -193,7 +204,25 @@ def main():
     fsm = DecisionFSM(world_state, robot_action, NUM_ROBOTS_PER_TEAM)
 
     # 可视化
-    visualizer = None if args.headless else ASCIIVisualizer()
+    visualizer = None
+    viz_mode = 'none' if args.headless else (args.viz or 'ascii')
+
+    if viz_mode == 'ascii':
+        visualizer = ASCIIVisualizer()
+    elif viz_mode == 'matplotlib':
+        try:
+            from visualization.field_visualizer import MatplotlibVisualizer
+            visualizer = MatplotlibVisualizer(
+                title=f"Booster T1 — {args.scenario}",
+                save_gif=args.export_gif,
+            )
+            print(f"  可视化:    matplotlib 2D 图形窗口")
+            if args.export_gif:
+                print(f"  GIF 导出:  {args.export_gif}")
+        except ImportError as e:
+            print(f"  错误: matplotlib 未安装 ({e})")
+            print(f"  请运行: pip install matplotlib")
+            sys.exit(1)
 
     # 日志目录
     os.makedirs(args.log_dir, exist_ok=True)
@@ -266,6 +295,9 @@ def main():
         csv_path = os.path.join(args.log_dir, "decision_log.csv")
         fsm.export_csv(csv_path)
         print(f"\n  📁 决策日志已导出: {csv_path}")
+
+    if visualizer and hasattr(visualizer, 'close'):
+        visualizer.close()
 
 
 def _check_goal(ws: WorldState):
