@@ -77,6 +77,7 @@
 |------|------|------|
 | 终端文本 | 默认 / `--viz ascii` | 每 10 帧打印坐标和状态 |
 | **2D 图形窗口** | `--viz matplotlib` | 绿色球场、机器人、球轨迹、**传球虚线箭头** |
+| **3D MuJoCo** | `demo_mujoco_pass.py` | 两个圆柱机器人 + 3D 球场窗口 |
 | 导出 GIF | 加 `--export-gif PATH` | 录屏替代方案，无需手动录屏 |
 
 ### 传球可视化（推荐）
@@ -87,6 +88,10 @@ python main.py --scenario pass --duration 30 --viz matplotlib
 
 # 一键启动（双击 pass_viz.bat）
 pass_viz.bat
+
+# 3D MuJoCo 最小传球 demo（两个圆柱机器人）
+python demo_mujoco_pass.py
+demo_mujoco_pass.bat
 
 # 导出 GIF 用于演示视频/PPT
 python main.py --scenario pass --duration 30 --viz matplotlib --export-gif outputs/videos/pass_demo.gif

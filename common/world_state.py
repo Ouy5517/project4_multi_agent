@@ -283,6 +283,20 @@ def create_pass_scenario() -> WorldState:
     )
 
 
+def create_pass_scenario_2v0() -> WorldState:
+    """最小传球场景: 2 个己方圆柱机器人, 无对手"""
+    return WorldState(
+        ball=Ball(x=-2.0, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-2.0, y=0.2, theta=0.0),
+            Robot(id=1, team=Team.BLUE, x=0.0, y=1.5, theta=1.57),
+        ],
+        opponents=[],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
 def create_shoot_scenario() -> WorldState:
     """射门场景: 0号在对方半场, 持球可射门"""
     return WorldState(
