@@ -45,6 +45,7 @@ from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
 from telemetry.run_recorder import RunRecorder
+from evaluation.scenario_evaluator import run_scenario
 
 # 真实模式桥接层 (导入失败不阻塞, 仅 --mode real 时需要)
 try:
@@ -140,6 +141,14 @@ def parse_args():
         help='无渲染模式 (不输出 ASCII 可视化)'
     )
     parser.add_argument(
+        '--fast', action='store_true',
+        help='快速模式 (不按实时帧率 sleep)'
+    )
+    parser.add_argument(
+        '--strict', action='store_true',
+        help='严格验收模式: 场景未达成期望时返回非零退出码'
+    )
+    parser.add_argument(
         '--log-dir', default='outputs',
         help='日志输出目录 (默认: outputs/)'
     )
@@ -156,6 +165,35 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if args.strict and args.scenario == "pass_fixed":
+        result = run_scenario(args.scenario, seed=1001, fast=args.fast)
+        run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}"
+        out_dir = Path(args.log_dir) / run_id
+        recorder = RunRecorder(out_dir, args.scenario, seed=1001)
+        for index, event_name in enumerate(result.events, start=1):
+            recorder.record_event(
+                OutcomeEvent(
+                    tick=index,
+                    timestamp=float(index),
+                    outcome=event_name,
+                    success=True,
+                    metrics={},
+                )
+            )
+        recorder.finish(
+            OutcomeEvent(
+                tick=len(result.events),
+                timestamp=result.metrics.get("time_to_receive_s", 0.0),
+                outcome=result.outcome,
+                success=result.success,
+                metrics=result.metrics,
+                failure_code=result.failure_code,
+            )
+        )
+        print(f"  严格验收结果: {result.outcome} success={result.success}")
+        print(f"  运行产物: {out_dir}")
+        sys.exit(0 if result.success else 2)
 
     print("=" * 60)
     print("  Booster T1 多机器人足球协同决策系统")
@@ -272,7 +310,7 @@ def main():
 
         # 维持帧率
         elapsed = time.time() - loop_start
-        if elapsed < DT:
+        if not args.fast and elapsed < DT:
             time.sleep(DT - elapsed)
 
         # 每 5 秒打印摘要

@@ -27,6 +27,7 @@ from common.events import DecisionEvent
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
+from strategy.strategy_receive import ReceiveStrategy
 from strategy.strategy_position import PositionStrategy
 from strategy.strategy_block import BlockStrategy
 from decision.team_coordinator import TeamCoordinator
@@ -42,6 +43,7 @@ class DecisionState(Enum):
     CHASE = "CHASE"            # 追球
     DRIBBLE = "DRIBBLE"        # 带球推进
     PASS = "PASS"              # 传球
+    RECEIVE = "RECEIVE"        # 接球
     SHOOT = "SHOOT"            # 射门
     BLOCK = "BLOCK"            # 防守卡位
 
@@ -86,6 +88,7 @@ class RobotFSM:
         self.state_timer = 0.0          # 在当前状态的持续时间
         self.target: Optional[Tuple[float, float]] = None
         self.pass_target_id: Optional[int] = None
+        self.has_kicked = False
 
     def transition(self, new_state: DecisionState, reason: str = "") -> FSMTransition:
         """执行状态转换"""
@@ -126,6 +129,7 @@ class DecisionFSM:
         self.pass_strategy = PassStrategy(world_state)
         self.dribble_strategy = DribbleStrategy(world_state)
         self.shoot_strategy = ShootStrategy(world_state)
+        self.receive_strategy = ReceiveStrategy(world_state)
         self.position_strategy = PositionStrategy(world_state)
         self.block_strategy = BlockStrategy(world_state)
 
@@ -167,6 +171,7 @@ class DecisionFSM:
         self.pass_strategy.update_world_state(world_state)
         self.dribble_strategy.update_world_state(world_state)
         self.shoot_strategy.update_world_state(world_state)
+        self.receive_strategy.update_world_state(world_state)
         self.position_strategy.update_world_state(world_state)
         self.block_strategy.update_world_state(world_state)
 
@@ -274,6 +279,9 @@ class DecisionFSM:
         elif fsm.state == DecisionState.PASS:
             self._handle_pass(robot_id, role, fsm)
 
+        elif fsm.state == DecisionState.RECEIVE:
+            self._handle_receive(robot_id, role, fsm)
+
         elif fsm.state == DecisionState.SHOOT:
             self._handle_shoot(robot_id, role, fsm)
 
@@ -371,14 +379,32 @@ class DecisionFSM:
         success, direction, power = self.pass_strategy.execute_pass(
             robot_id, fsm.pass_target_id)
 
-        if success:
+        if success and not fsm.has_kicked:
             self._action.turn_to(robot_id, direction)
-            self._action.kick(robot_id, power, direction)
+            accepted = self._action.kick(robot_id, power, direction)
+            if accepted:
+                fsm.has_kicked = True
+                receiver_fsm = self._fsms.get(fsm.pass_target_id)
+                if receiver_fsm:
+                    receiver_fsm.transition(DecisionState.RECEIVE, "pass in flight")
 
         # 传球完成后回到追球状态
         if fsm.state_timer > 2.0:
             fsm.transition(DecisionState.CHASE, "pass completed")
             fsm.pass_target_id = None
+            fsm.has_kicked = False
+
+    # ---- RECEIVE: 接球 ----
+
+    def _handle_receive(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
+        target = self.receive_strategy.predict_receive_point(robot_id)
+        self._action.move_to(robot_id, *target)
+        robot = self._ws.get_robot_by_id(robot_id)
+        if robot:
+            ball = self._ws.ball
+            self._action.turn_to(robot_id, math.atan2(ball.y - robot.y, ball.x - robot.x))
+        if self.receive_strategy.has_received(robot_id):
+            fsm.transition(DecisionState.CHASE, "pass received")
 
     # ---- SHOOT: 射门 ----
 
@@ -421,11 +447,15 @@ class DecisionFSM:
             return
 
         # 再评估传球
-        pass_options = self.pass_strategy.evaluate_pass_options(robot_id)
+        pass_options = [
+            option for option in self.pass_strategy.evaluate_pass_options(robot_id)
+            if option.is_clear
+        ]
         if pass_options and pass_options[0].score > 0.4:
             fsm.transition(DecisionState.PASS,
                           f"pass to {pass_options[0].receiver_id} (score={pass_options[0].score:.2f})")
             fsm.pass_target_id = pass_options[0].receiver_id
+            fsm.has_kicked = False
             return
 
         # 默认带球
