@@ -12,6 +12,7 @@
 #   ./run.sh 2d pass            Matplotlib 2D + 传球场景
 #   ./run.sh ascii              ASCII 终端可视化
 #   ./run.sh headless [秒数]    无渲染模式 (仅日志)
+#   ./run.sh solo [viz] [bx] [by] [dur]  单球员射空门测试
 #   ./run.sh test               运行测试套件
 #   ./run.sh install            安装全部依赖
 # ================================================================
@@ -93,6 +94,7 @@ interactive_menu() {
     echo -e "  ${GREEN}[4]${NC} 无渲染模式 (仅日志) 📝"
     echo -e "  ${GREEN}[5]${NC} 运行测试套件 🧪"
     echo -e "  ${GREEN}[6]${NC} 安装全部依赖 📦"
+    echo -e "  ${GREEN}[7]${NC} Solo Shoot Test ⚽        ${CYAN}← 单球员射空门${NC}"
     echo -e "  ${GREEN}[0]${NC} 退出"
     echo ""
     read -r -p "  输入选项 [1]: " CHOICE
@@ -105,6 +107,7 @@ interactive_menu() {
         4) mode_headless "$@" ;;
         5) run_tests ;;
         6) install_deps ;;
+        7) mode_solo "$@" ;;
         0) echo "  退出"; exit 0 ;;
         *) echo -e "${RED}无效选项${NC}"; exit 1 ;;
     esac
@@ -240,6 +243,28 @@ mode_headless() {
     echo -e "${GREEN}仿真完成! 日志: outputs/decision_log.csv${NC}"
 }
 
+mode_solo() {
+    banner
+    check_deps
+
+    local VIZ="${1:-none}"
+    local BALL_X="${2:-3.0}"
+    local BALL_Y="${3:-0.0}"
+    local DURATION="${4:-10}"
+
+    echo ""
+    echo -e "  ${BLUE}启动:${NC} Solo Shoot Test | 单球员射空门"
+    echo -e "  球位: (${BALL_X}, ${BALL_Y}) | 最大时长: ${DURATION}s | viz=${VIZ}"
+    echo ""
+
+    python3 experiments/solo_shoot_test.py \
+        --ball-x "$BALL_X" --ball-y "$BALL_Y" \
+        --viz "$VIZ" --duration "$DURATION"
+
+    echo ""
+    echo -e "${GREEN}测试完成!${NC}"
+}
+
 run_tests() {
     banner
     echo -e "  ${BLUE}运行测试套件...${NC}"
@@ -332,6 +357,11 @@ case "$CMD" in
         mode_headless "$DUR"
         ;;
 
+    solo|shoot-test)
+        VIZ="${1:-none}"; BX="${2:-3.0}"; BY="${3:-0.0}"; DUR="${4:-10}"
+        mode_solo "$VIZ" "$BX" "$BY" "$DUR"
+        ;;
+
     test|tests|pytest)
         run_tests
         ;;
@@ -349,6 +379,7 @@ case "$CMD" in
         echo "  ./run.sh 2d [场景] [秒数]     Matplotlib 2D 图形"
         echo "  ./run.sh ascii [场景] [秒数]  ASCII 终端可视化"
         echo "  ./run.sh headless [秒数]      无渲染模式"
+        echo "  ./run.sh solo [viz] [bx] [by] [dur]  单球员射空门"
         echo "  ./run.sh test                 运行测试"
         echo "  ./run.sh install              安装依赖"
         echo ""
@@ -356,6 +387,8 @@ case "$CMD" in
         echo "  ./run.sh 3d pass 60           MuJoCo 3D + 传球 + 60秒"
         echo "  ./run.sh 2d threat            Matplotlib + 防守场景"
         echo "  ./run.sh headless 120         无渲染跑2分钟"
+        echo "  ./run.sh solo ascii 3.0 0.0  单球员射空门 (ASCII)"
+        echo "  ./run.sh solo mujoco 2.5 1.0 单球员射空门 (3D)"
         ;;
 
     *)
