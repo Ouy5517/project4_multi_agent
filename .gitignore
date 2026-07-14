@@ -3,7 +3,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
-booster_assets/
 outputs/
 *.csv
 *.pdf
@@ -48,3 +47,5 @@ webots/worlds/*.wbproj
 # IDE
 webots/.vscode/
 webots/.idea/
+
+
