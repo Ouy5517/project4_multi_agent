@@ -166,7 +166,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.strict and args.scenario == "pass_fixed":
+    if args.strict and args.scenario in {"pass_fixed", "dribble_open", "position_block"}:
         result = run_scenario(args.scenario, seed=1001, fast=args.fast)
         run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}"
         out_dir = Path(args.log_dir) / run_id
