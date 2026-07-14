@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "acceptance: end-to-end acceptance scenarios",
+  "performance: long-running or performance checks",
+  "ros2: tests requiring ROS2 Humble",
+]
+
+[tool.coverage.run]
+source = ["common", "decision", "strategy", "simulation", "evaluation", "telemetry"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
