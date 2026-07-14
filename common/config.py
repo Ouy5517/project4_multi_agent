@@ -64,3 +64,5 @@ TEAM_YELLOW = "yellow"        # 黄队 (对手)
 # ============================================================
 REEVALUATE_INTERVAL = 1.0     # 每隔多少秒重新评估状态
 STATE_MIN_DURATION = 0.5      # 状态最短持续时间 (秒)
+ROLE_HOLD_SECONDS = 0.5       # 角色最短保持时间 (秒)
+ROLE_SWITCH_MARGIN = 0.20     # 持球者切换距离优势 (米)

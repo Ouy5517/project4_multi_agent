@@ -29,6 +29,7 @@ from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
 from strategy.strategy_position import PositionStrategy
 from strategy.strategy_block import BlockStrategy
+from decision.team_coordinator import TeamCoordinator
 
 
 # ================================================================
@@ -136,6 +137,7 @@ class DecisionFSM:
         # 角色
         self._ball_carrier_id: Optional[int] = None
         self._supporter_id: Optional[int] = None
+        self._team_coordinator = TeamCoordinator()
 
         # 日志
         self.transitions: List[FSMTransition] = []  # 当前帧的转换
@@ -169,7 +171,18 @@ class DecisionFSM:
         self.block_strategy.update_world_state(world_state)
 
         # 分配角色
-        roles = self._assign_roles()
+        team_plan = self._team_coordinator.plan(world_state)
+        roles = team_plan.roles
+        self._ball_carrier_id = next(
+            (rid for rid, role in roles.items() if role == RobotRole.BALL_CARRIER),
+            None,
+        )
+        self._supporter_id = next(
+            (rid for rid, role in roles.items() if role == RobotRole.SUPPORTER),
+            None,
+        )
+        for robot in world_state.teammates:
+            robot.role = roles.get(robot.id, RobotRole.IDLE)
 
         # 对每个机器人执行决策
         for robot_id in range(self._num_robots):
