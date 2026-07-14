@@ -77,11 +77,21 @@ class MuJoCoSimulator(Simulator):
     支持完整的 3v3 场景, 包括机器人状态光圈、传球连线和踢球肢体动画。
     """
 
-    # 机器人 mocap 原点离地高度
+    # 机器人 mocap 原点离地高度 (T1 proxy 已在 XML 内 GROUND_BIAS 校正)
     ROBOT_Z = 0.0
 
     # 球离地高度
-    BALL_Z = 0.05
+    BALL_Z = 0.055
+
+    # 可选跟随关节 (短名驱动之外)
+    _FOLLOW_JOINT_SUFFIXES = (
+        ("Right_Ankle_Pitch", "r_hip", -0.25),
+        ("Left_Ankle_Pitch", "l_hip", -0.25),
+        ("Right_Elbow_Pitch", "r_shoulder", 0.35),
+        ("Left_Elbow_Pitch", "l_shoulder", 0.35),
+        ("Waist", "r_hip", -0.08),
+        ("Head_pitch", None, 0.06),
+    )
 
     def __init__(self, xml_path: Optional[str] = None,
                  num_blue: int = NUM_ROBOTS_PER_TEAM,
@@ -113,6 +123,7 @@ class MuJoCoSimulator(Simulator):
         # robot_id → {pose_attr → qposadr}
         self._limb_qpos: Dict[int, Dict[str, int]] = {}
         self._limb_animator = LimbAnimator()
+        self._limb_follow_qpos: Dict[int, Dict[str, int]] = {}
         self._init_robot_mappings()
 
         # 初始化传球线 mocap ID 和 geom ID
@@ -149,7 +160,7 @@ class MuJoCoSimulator(Simulator):
             except Exception:
                 pass  # ring geom 可选
 
-            # 肢体关节 qpos 地址
+            # 肢体关节 qpos 地址 (短名 + 跟随关节)
             joint_map: Dict[str, int] = {}
             for suffix, attr in _LIMB_JOINT_SUFFIXES:
                 jname = f"robot_{rid}_{suffix}"
@@ -157,8 +168,19 @@ class MuJoCoSimulator(Simulator):
                     joint_map[attr] = self._joint_qposadr(jname)
                 except Exception:
                     pass
+            follow_map: Dict[str, int] = {}
+            for suffix, _src, _scale in self._FOLLOW_JOINT_SUFFIXES:
+                jname = f"robot_{rid}_{suffix}"
+                try:
+                    follow_map[suffix] = self._joint_qposadr(jname)
+                except Exception:
+                    pass
             if joint_map:
                 self._limb_qpos[rid] = joint_map
+            if follow_map:
+                if not hasattr(self, "_limb_follow_qpos"):
+                    self._limb_follow_qpos: Dict[int, Dict[str, int]] = {}
+                self._limb_follow_qpos[rid] = follow_map
 
     def _init_pass_lines(self):
         """查找传球线 mocap body 和 geom"""
@@ -303,11 +325,21 @@ class MuJoCoSimulator(Simulator):
         mujoco.mj_forward(self.model, self.data)
 
     def _apply_limb_poses(self):
-        """把 LimbAnimator 的姿态写入各机器人关节 qpos"""
+        """把 LimbAnimator 的姿态写入短名关节, 并轻度驱动踝/肘/腰跟随"""
         for rid, joint_map in self._limb_qpos.items():
             pose: JointPose = self._limb_animator.get_pose(rid)
             for attr, qadr in joint_map.items():
                 self.data.qpos[qadr] = getattr(pose, attr, 0.0)
+
+            follow = self._limb_follow_qpos.get(rid, {})
+            for suffix, src_attr, scale in self._FOLLOW_JOINT_SUFFIXES:
+                qadr = follow.get(suffix)
+                if qadr is None:
+                    continue
+                if src_attr is None:
+                    self.data.qpos[qadr] = scale
+                else:
+                    self.data.qpos[qadr] = getattr(pose, src_attr, 0.0) * scale
 
     # ================================================================
     # 状态光圈 (根据 FSM 决策状态更新)

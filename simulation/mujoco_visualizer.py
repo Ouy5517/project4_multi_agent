@@ -94,9 +94,9 @@ class MuJoCoVisualizer:
                 show_right_ui=False,
             )
             # 设置初始相机角度 (俯视视角, 能看到整个场地)
-            self._viewer.cam.lookat[:] = [0, 0, 0.3]
-            self._viewer.cam.distance = 12
-            self._viewer.cam.elevation = -40
+            self._viewer.cam.lookat[:] = [0, 0, 0.5]
+            self._viewer.cam.distance = 14
+            self._viewer.cam.elevation = -35
             self._viewer.cam.azimuth = 90
 
             self._start_time = time.time()
