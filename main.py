@@ -46,6 +46,7 @@ from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
 from telemetry.run_recorder import RunRecorder
 from evaluation.scenario_evaluator import run_scenario
+from evaluation.batch_runner import run_batch
 
 # 真实模式桥接层 (导入失败不阻塞, 仅 --mode real 时需要)
 try:
@@ -149,6 +150,14 @@ def parse_args():
         help='严格验收模式: 场景未达成期望时返回非零退出码'
     )
     parser.add_argument(
+        '--runs', type=int, default=1,
+        help='批量运行次数'
+    )
+    parser.add_argument(
+        '--seed-start', type=int, default=1001,
+        help='批量运行起始随机种子'
+    )
+    parser.add_argument(
         '--log-dir', default='outputs',
         help='日志输出目录 (默认: outputs/)'
     )
@@ -165,6 +174,14 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if args.runs > 1:
+        run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}-batch"
+        out_dir = Path(args.log_dir) / run_id
+        summary = run_batch(args.scenario, args.runs, args.seed_start, out_dir)
+        print(f"  批量运行结果: {summary['successes']}/{summary['runs']} success_rate={summary['success_rate']:.2f}")
+        print(f"  运行产物: {out_dir}")
+        sys.exit(0 if (not args.strict or summary["success_rate"] >= 0.80) else 2)
 
     if args.strict and args.scenario in {"pass_fixed", "dribble_open", "position_block", "pass_receive_shoot"}:
         result = run_scenario(args.scenario, seed=1001, fast=args.fast)
