@@ -202,6 +202,23 @@ def main():
         run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}"
         out_dir = Path(args.log_dir) / run_id
         recorder = RunRecorder(out_dir, args.scenario, seed=1001)
+        try:
+            trace_sim = Simulator()
+            scenario_for_trace = "pass_fixed" if args.scenario == "pass_receive_shoot" else args.scenario
+            if args.scenario in {"2v1_interference", "2v2_attack_defense"}:
+                scenario_for_trace = args.scenario
+            load_scenario_into_simulator(trace_sim, scenario_for_trace)
+            recorder.record_trajectory(
+                tick=0,
+                timestamp=0.0,
+                ball=(trace_sim.ball.x, trace_sim.ball.y, trace_sim.ball.vx, trace_sim.ball.vy),
+                robots=[
+                    {"id": robot.id, "x": robot.x, "y": robot.y, "state": "", "role": robot.role.value}
+                    for robot in trace_sim.get_robots(Team.BLUE) + trace_sim.get_robots(Team.YELLOW)
+                ],
+            )
+        except Exception:
+            pass
         for index, event_name in enumerate(result.events, start=1):
             recorder.record_event(
                 OutcomeEvent(
