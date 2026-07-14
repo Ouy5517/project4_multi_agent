@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
 """
-决策状态机
-===========
+决策状态机 (整合固定点传球)
+===========================
 多机器人协同决策引擎：
-- 状态定义: IDLE → CHASE → (DRIBBLE | PASS | SHOOT) → ... → IDLE
+- 通用状态: IDLE → CHASE → (DRIBBLE | PASS | SHOOT) → ... → IDLE
                            ↓
                          BLOCK (防守状态)
+- 固定点传球场景: 内置 MockTeamBus + FixedPointPassFSM
+  INIT → WAIT_RECEIVER → PASSING → DONE / FAILED
 - 角色分配: ball_carrier, supporter, defender
 - 决策日志: 记录每次状态转换和决策原因
 """
@@ -17,6 +20,7 @@ import math
 from common.config import (
     DT, REEVALUATE_INTERVAL, STATE_MIN_DURATION,
     ROBOT_KICK_RANGE, SHOOT_RANGE, OUR_GOAL_X, GOAL_X,
+    POSSESSION_CONTESTED_RANGE,
     TEAM_BLUE
 )
 from common.world_state import (
@@ -28,6 +32,15 @@ from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
 from strategy.strategy_position import PositionStrategy
 from strategy.strategy_block import BlockStrategy
+
+# 固定点传球模块 (可选依赖)
+try:
+    from common.models import Vec2 as FixedVec2
+    from communication.mock_team_bus import MockTeamBus, MessageType, TeamMessage
+    from decision.pass_fsm import FixedPointPassFSM, PassConfig, PassState
+    _FIXED_PASS_AVAILABLE = True
+except ImportError:
+    _FIXED_PASS_AVAILABLE = False
 
 
 # ================================================================
@@ -42,6 +55,8 @@ class DecisionState(Enum):
     PASS = "PASS"              # 传球
     SHOOT = "SHOOT"            # 射门
     BLOCK = "BLOCK"            # 防守卡位
+    # 固定点传球专用状态
+    FIXED_PASS = "FIXED_PASS"  # 固定坐标点模拟通信传球
 
 
 @dataclass
@@ -60,11 +75,12 @@ class DecisionLog:
     tick: int = 0
     timestamp: float = 0.0
     robot_id: int = 0
+    agent: str = ""            # Fixed-point: "R1" / "R2" / "FSM"
     state: str = ""
     role: str = ""
     x: float = 0.0
     y: float = 0.0
-    action: str = ""          # "move", "kick", "stop", "wait"
+    action: str = ""           # "move", "kick", "stop", "wait"
     action_params: dict = field(default_factory=dict)
     reason: str = ""
 
@@ -103,6 +119,21 @@ class RobotFSM:
 
 
 # ================================================================
+# 固定点传球场景结果
+# ================================================================
+
+@dataclass
+class FixedPassResult:
+    """固定点传球完成结果"""
+    success: bool
+    final_state: str
+    elapsed_s: float
+    ball_owner_id: str
+    message_count: int
+    events: list = field(default_factory=list)
+
+
+# ================================================================
 # 顶层决策引擎
 # ================================================================
 
@@ -110,7 +141,23 @@ class DecisionFSM:
     """
     多机器人协同决策引擎。
     每帧调用 update() 驱动所有机器人的决策。
+
+    支持两种模式:
+    1. 通用模式 (默认): 基于策略模块的动态决策
+    2. 固定点传球模式 (--scenario fixed-pass): 基于 MockTeamBus 的模拟通信传球
     """
+
+    # ---- 固定点传球默认参数 (可通过 init_fixed_pass 覆盖) ----
+    FIXED_PASS_DEFAULTS = {
+        "passer_id": "R1",
+        "receiver_id": "R2",
+        "target_x": 7.0,
+        "target_y": 4.0,
+        "receiver_speed_mps": 1.5,
+        "ball_speed_mps": 4.0,
+        "arrival_tolerance_m": 0.12,
+        "timeout_s": 15.0,
+    }
 
     def __init__(self, world_state: WorldState,
                  action: RobotActionInterface,
@@ -118,6 +165,8 @@ class DecisionFSM:
         self._ws = world_state
         self._action = action
         self._num_robots = num_robots
+        self._opp_tick_counter = 0
+        self._opp_reaction_interval = 3
 
         # 策略模块
         self.pass_strategy = PassStrategy(world_state)
@@ -134,6 +183,7 @@ class DecisionFSM:
         # 角色
         self._ball_carrier_id: Optional[int] = None
         self._supporter_id: Optional[int] = None
+        self._supporter_id: Optional[int] = None
 
         # 日志
         self.transitions: List[FSMTransition] = []  # 当前帧的转换
@@ -142,6 +192,84 @@ class DecisionFSM:
         # 回合统计
         self.tick_count: int = 0
 
+        # ---- 固定点传球模式 ----
+        self._fixed_pass_mode: bool = False
+        self._fixed_pass_fsm: Optional["FixedPointPassFSM"] = None
+        self._fixed_pass_bus: Optional["MockTeamBus"] = None
+        self._fixed_pass_result: Optional["FixedPassResult"] = None
+
+    # ================================================================
+    # 固定点传球场景接口
+    # ================================================================
+
+    def init_fixed_pass_scenario(self, **kwargs) -> bool:
+        """
+        初始化固定点传球场景。
+        必须在 update() 之前调用。
+
+        可用参数 (均有默认值):
+            passer_id, receiver_id, target_x, target_y,
+            receiver_speed_mps, ball_speed_mps,
+            arrival_tolerance_m, timeout_s
+
+        Returns:
+            True 如果初始化成功, False 如果模块不可用
+        """
+        if not _FIXED_PASS_AVAILABLE:
+            print("[DecisionFSM] 错误: 固定点传球模块不可用")
+            return False
+
+        params = dict(self.FIXED_PASS_DEFAULTS)
+        params.update(kwargs)
+
+        # 创建配置和消息总线
+        config = PassConfig(
+            passer_id=params["passer_id"],
+            receiver_id=params["receiver_id"],
+            fixed_target=FixedVec2(params["target_x"], params["target_y"]),
+            receiver_speed_mps=params["receiver_speed_mps"],
+            ball_speed_mps=params["ball_speed_mps"],
+            arrival_tolerance_m=params["arrival_tolerance_m"],
+            timeout_s=params["timeout_s"],
+        )
+        self._fixed_pass_bus = MockTeamBus()
+        self._fixed_pass_fsm = FixedPointPassFSM(
+            config, self._fixed_pass_bus, self._fixed_pass_record_event
+        )
+        self._fixed_pass_mode = True
+        self._fixed_pass_result = None
+
+        # 将所有机器人设为 FIXED_PASS 状态
+        for fsm in self._fsms.values():
+            fsm.transition(DecisionState.FIXED_PASS, "entering fixed-point pass scenario")
+
+        return True
+
+    def _fixed_pass_record_event(
+        self, time_s: float, actor: str, action: str, result: str, detail: str
+    ) -> None:
+        """固定点传球事件回调 — 桥接到 DecisionFSM 日志系统"""
+        self.decision_logs.append(DecisionLog(
+            tick=self.tick_count,
+            timestamp=time_s,
+            robot_id=0,
+            agent=actor,
+            state=self._fixed_pass_fsm.state.value if self._fixed_pass_fsm else "?",
+            role="",
+            x=0.0, y=0.0,
+            action=action,
+            action_params={"result": result, "detail": detail},
+            reason=detail,
+        ))
+
+    @property
+    def is_fixed_pass_mode(self) -> bool:
+        return self._fixed_pass_mode
+
+    @property
+    def fixed_pass_result(self) -> Optional["FixedPassResult"]:
+        return self._fixed_pass_result
+
     # ================================================================
     # 主更新
     # ================================================================
@@ -149,15 +277,19 @@ class DecisionFSM:
     def update(self, world_state: WorldState, dt: float = DT):
         """
         每帧调用。
-        1. 更新世界状态
-        2. 分配角色
-        3. 对每个机器人运行 FSM
-        4. 记录决策
+        如果是固定点传球模式, 走简化仿真路径;
+        否则走通用决策路径。
         """
         self._ws = world_state
         self.transitions.clear()
         self.tick_count += 1
 
+        # ---- 固定点传球模式 ----
+        if self._fixed_pass_mode:
+            self._update_fixed_pass(dt)
+            return
+
+        # ---- 通用模式 ----
         # 更新策略模块的世界状态
         self.pass_strategy.update_world_state(world_state)
         self.dribble_strategy.update_world_state(world_state)
@@ -167,6 +299,9 @@ class DecisionFSM:
 
         # 分配角色
         roles = self._assign_roles()
+
+        # 对手 AI
+        self._update_opponents()
 
         # 对每个机器人执行决策
         for robot_id in range(self._num_robots):
@@ -190,8 +325,214 @@ class DecisionFSM:
         self._log_decisions(world_state, roles)
 
     # ================================================================
+    # 固定点传球更新
+    # ================================================================
+
+    def _update_fixed_pass(self, dt: float):
+        """固定点传球模式的每帧更新"""
+        if self._fixed_pass_fsm is None:
+            return
+
+        # 固定点传球使用自己的简化世界状态
+        from common.models import BallState, RobotState, WorldState as FixedWorldState, Vec2 as FixedVec2
+
+        # 从 FSM 配置中推断当前状态
+        config = self._fixed_pass_fsm.config
+        fsm = self._fixed_pass_fsm
+
+        # 从消息历史推断 R2 当前位置
+        receiver_pos = FixedVec2(5.0, 1.5)  # 初始位置
+        for msg in (self._fixed_pass_bus.history if self._fixed_pass_bus else []):
+            # R2 移动追踪 — 简化: 用事件日志中的最后位置
+            pass
+
+        # 构建当前时刻的简化世界状态
+        # 注: 此时 world_state 由 FixedPointSimulator 内部维护
+        # 这里仅填充 FSM.update 所需的最小字段
+        fixed_ws = FixedWorldState(
+            time_s=self.tick_count * dt,
+            field_width=12.0,
+            field_height=8.0,
+            robots={
+                config.passer_id: RobotState(
+                    robot_id=config.passer_id,
+                    position=FixedVec2(2.0, 4.0),
+                    role="passer",
+                    has_ball=(fsm.state not in (PassState.PASSING, PassState.DONE)),
+                ),
+                config.receiver_id: RobotState(
+                    robot_id=config.receiver_id,
+                    position=FixedVec2(5.0, 1.5),
+                    role="receiver",
+                    has_ball=(fsm.state == PassState.DONE),
+                ),
+            },
+            ball=BallState(
+                position=FixedVec2(2.2, 4.0),
+                owner_id=(
+                    config.passer_id if fsm.state in (PassState.INIT, PassState.WAIT_RECEIVER)
+                    else (config.receiver_id if fsm.state == PassState.DONE else None)
+                ),
+            ),
+        )
+
+        self._fixed_pass_fsm.update(fixed_ws, dt)
+
+        # 检查是否完成
+        if fsm.state in (PassState.DONE, PassState.FAILED):
+            self._fixed_pass_result = FixedPassResult(
+                success=(fsm.state == PassState.DONE),
+                final_state=fsm.state.value,
+                elapsed_s=round(self.tick_count * dt, 2),
+                ball_owner_id=config.receiver_id if fsm.state == PassState.DONE else config.passer_id,
+                message_count=len(self._fixed_pass_bus.history) if self._fixed_pass_bus else 0,
+            )
+
+    # ================================================================
     # 角色分配
     # ================================================================
+
+    # ---- Opponent AI (Active Interference) ----
+
+    def _update_opponents(self):
+        """Multi-role opponent AI with active interference.
+
+        Roles:
+          - pressure: chase ball, contest possession, shoot
+          - interceptor: block passing lanes between blue teammates
+          - blocker: defend goal, block shot angles
+
+        Detects blue team intentions by reading their FSM states.
+        """
+        if not self._ws.opponents:
+            return
+        self._opp_tick_counter += 1
+        if self._opp_tick_counter % self._opp_reaction_interval != 0:
+            return
+
+        ball = self._ws.ball
+
+        # Gather intel on blue team
+        blue_carrier_id = self._ball_carrier_id
+        blue_carrier = self._ws.get_robot_by_id(blue_carrier_id) if blue_carrier_id is not None else None
+        blue_passer = None
+        blue_receiver_id = None
+
+        # Detect if blue is attempting a pass
+        for rid in range(self._num_robots):
+            s = self._fsms[rid].state
+            if s == DecisionState.PASS:
+                blue_passer = self._ws.get_robot_by_id(rid)
+                blue_receiver_id = self._fsms[rid].pass_target_id
+                break
+
+        blue_receiver = self._ws.get_robot_by_id(blue_receiver_id) if blue_receiver_id is not None else None
+
+        # Count opponents and assign roles
+        num_opp = len(self._ws.opponents)
+        if num_opp == 0:
+            return
+
+        if num_opp == 1:
+            opp = self._ws.opponents[0]
+            if blue_passer is not None and blue_receiver is not None:
+                self._opp_intercept_pass(opp, blue_passer, blue_receiver, ball)
+            else:
+                self._opp_pressure(opp, ball, blue_carrier)
+
+        elif num_opp == 2:
+            opp1, opp2 = self._ws.opponents[0], self._ws.opponents[1]
+            if blue_passer is not None and blue_receiver is not None:
+                self._opp_intercept_pass(opp1, blue_passer, blue_receiver, ball)
+                self._opp_defend_receiver(opp2, blue_receiver, ball)
+            else:
+                self._opp_pressure(opp1, ball, blue_carrier)
+                self._opp_block_goal(opp2, ball)
+
+        else:
+            opp1, opp2, opp3 = self._ws.opponents[0], self._ws.opponents[1], self._ws.opponents[2]
+            if blue_passer is not None and blue_receiver is not None:
+                self._opp_intercept_pass(opp1, blue_passer, blue_receiver, ball)
+                self._opp_defend_receiver(opp2, blue_receiver, ball)
+                self._opp_block_goal(opp3, ball)
+            elif blue_carrier is not None:
+                self._opp_pressure(opp1, ball, blue_carrier)
+                supporter = self._ws.get_robot_by_id(self._supporter_id) if self._supporter_id is not None else None
+                self._opp_intercept_pass(opp2, blue_carrier, supporter, ball)
+                self._opp_block_goal(opp3, ball)
+            else:
+                self._opp_pressure(opp1, ball, blue_carrier)
+                self._opp_block_goal(opp2, ball)
+                self._opp_block_goal(opp3, ball)
+
+    # ---- Individual opponent behaviors ----
+
+    def _opp_pressure(self, opp, ball, carrier):
+        """Pressure the ball: chase, contest, tackle, shoot toward blue goal."""
+        our_goal_center = self._ws.our_goal.center
+        dist_to_ball = ((opp.x - ball.x)**2 + (opp.y - ball.y)**2) ** 0.5
+
+        if dist_to_ball < ROBOT_KICK_RANGE * 1.2:
+            # Next to ball! Kick toward blue goal
+            angle_to_blue_goal = math.atan2(our_goal_center[1] - opp.y,
+                                           our_goal_center[0] - opp.x)
+            self._action.kick(opp.id, 85, angle_to_blue_goal)
+        elif dist_to_ball < 2.0:
+            self._action.move_to(opp.id, ball.x, ball.y)
+        else:
+            # Position between ball and our goal
+            mid_x = (ball.x + our_goal_center[0]) / 2
+            mid_y = (ball.y + our_goal_center[1]) / 2
+            self._action.move_to(opp.id, mid_x, mid_y)
+
+    def _opp_intercept_pass(self, opp, passer, receiver, ball):
+        """Intercept a pass: stand on the passing lane."""
+        if receiver is None:
+            self._opp_pressure(opp, ball, passer)
+            return
+        # Position on passing line, closer to passer
+        mid_x = passer.x * 0.4 + receiver.x * 0.6
+        mid_y = passer.y * 0.4 + receiver.y * 0.6
+        # Add small offset perpendicular to the line
+        dx = receiver.x - passer.x
+        dy = receiver.y - passer.y
+        d = ((dx)**2 + (dy)**2) ** 0.5
+        if d > 0.01:
+            perp_x = -dy / d * 0.3
+            perp_y = dx / d * 0.3
+            mid_x += perp_x
+            mid_y += perp_y
+        self._action.move_to(opp.id, mid_x, mid_y)
+
+    def _opp_defend_receiver(self, opp, receiver, ball):
+        """Mark a receiving blue robot tightly."""
+        if receiver is None:
+            return
+        goal = self._ws.opponent_goal
+        dx_away = receiver.x - goal.x
+        dy_away = receiver.y - goal.center[1]
+        d = ((dx_away)**2 + (dy_away)**2) ** 0.5
+        if d < 0.1:
+            target_x, target_y = receiver.x, receiver.y
+        else:
+            target_x = receiver.x - dx_away * 0.5 / d
+            target_y = receiver.y - dy_away * 0.5 / d
+        self._action.move_to(opp.id, target_x, target_y)
+
+    def _opp_block_goal(self, opp, ball):
+        """Block between ball and own goal (last line of defense)."""
+        goal = self._ws.opponent_goal
+        goal_cx = goal.x
+        goal_cy = goal.center[1]
+        dx = ball.x - goal_cx
+        dy = ball.y - goal_cy
+        d = ((dx)**2 + (dy)**2) ** 0.5
+        ratio = 1.0 / max(d, 1.0)
+        target_x = goal_cx + dx * ratio
+        target_y = goal_cy + dy * ratio
+        self._action.move_to(opp.id, target_x, target_y)
+
+    # ---- End Opponent AI ----
 
     def _assign_roles(self) -> Dict[int, RobotRole]:
         """
@@ -224,6 +565,7 @@ class DecisionFSM:
 
         if len(dists) >= 2:
             roles[dists[1][0]] = RobotRole.SUPPORTER
+            self._supporter_id = dists[1][0]
             self._supporter_id = dists[1][0]
 
             robot = self._ws.get_robot_by_id(dists[1][0])
@@ -263,6 +605,9 @@ class DecisionFSM:
 
         elif fsm.state == DecisionState.BLOCK:
             self._handle_block(robot_id, role, fsm)
+
+        elif fsm.state == DecisionState.FIXED_PASS:
+            pass  # 固定点传球由 _update_fixed_pass 统一处理
 
     # ---- IDLE ----
 
@@ -431,6 +776,7 @@ class DecisionFSM:
                     tick=self.tick_count,
                     timestamp=ws.timestamp,
                     robot_id=robot_id,
+                    agent=f"robot_{robot_id}",
                     state=fsm.state.value,
                     role=role.value,
                     x=robot.x,
@@ -479,12 +825,13 @@ class DecisionFSM:
         with open(filepath, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
-                "tick", "timestamp", "robot_id", "state", "role",
+                "tick", "timestamp", "robot_id", "agent", "state", "role",
                 "x", "y", "action", "reason"
             ])
             for log in self.decision_logs:
                 writer.writerow([
                     log.tick, f"{log.timestamp:.2f}", log.robot_id,
-                    log.state, log.role, f"{log.x:.2f}", f"{log.y:.2f}",
+                    log.agent, log.state, log.role,
+                    f"{log.x:.2f}", f"{log.y:.2f}",
                     log.action, log.reason
                 ])

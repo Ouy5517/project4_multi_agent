@@ -112,7 +112,7 @@ class TestFullSystem:
                 reader = csv_module.reader(f)
                 header = next(reader)
                 rows = list(reader)
-                assert header == ["tick", "timestamp", "robot_id", "state",
+                assert header == ["tick", "timestamp", "robot_id", "agent", "state",
                                   "role", "x", "y", "action", "reason"]
                 assert len(rows) > 0
         finally:

@@ -1,0 +1,2 @@
+"""Mock team communication package."""
+

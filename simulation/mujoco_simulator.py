@@ -42,7 +42,7 @@ class MuJoCoSimulator(Simulator):
 
         if xml_path is None:
             root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            xml_path = os.path.join(root, "assets", "soccer_minimal.xml")
+            xml_path = os.path.join(root, "assets", "soccer_full.xml")
 
         if not os.path.isfile(xml_path):
             raise FileNotFoundError(f"MuJoCo model not found: {xml_path}")
@@ -54,6 +54,7 @@ class MuJoCoSimulator(Simulator):
         self._ball_qposadr = self._joint_qposadr("ball_joint")
         self._ball_qveladr = self._joint_qveladr("ball_joint")
         self._robot_mocap_ids: Dict[int, int] = {}
+        self._yellow_mocap_ids: Dict[int, int] = {}
         for rid in self.blue_robots:
             body_name = f"robot_{rid}"
             body_id = mujoco.mj_name2id(
@@ -62,6 +63,13 @@ class MuJoCoSimulator(Simulator):
             if mocap_id < 0:
                 raise RuntimeError(f"Body {body_name} is not mocap")
             self._robot_mocap_ids[rid] = mocap_id
+        for rid in self.yellow_robots:
+            body_name = f"robot_{rid}"
+            body_id = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+            mocap_id = self.model.body_mocapid[body_id]
+            if mocap_id >= 0:
+                self._yellow_mocap_ids[rid] = mocap_id
 
         self.sync_to_mujoco()
 
@@ -112,9 +120,18 @@ class MuJoCoSimulator(Simulator):
         self.data.qvel[vadr:vadr + 3] = [self.ball.vx, self.ball.vy, 0]
         self.data.qvel[vadr + 3:vadr + 6] = 0
 
-        # 己方圆柱机器人 (mocap)
+        # 己方圆柱机器人 (mocap) - Blue
         for rid, mocap_id in self._robot_mocap_ids.items():
             robot = self.blue_robots.get(rid)
+            if robot is None:
+                continue
+            self.data.mocap_pos[mocap_id] = [robot.x, robot.y, self.ROBOT_Z]
+            quat = _yaw_to_quat(robot.theta)
+            self.data.mocap_quat[mocap_id] = list(quat)
+
+        # 对方圆柱机器人 (mocap) - Yellow
+        for rid, mocap_id in self._yellow_mocap_ids.items():
+            robot = self.yellow_robots.get(rid)
             if robot is None:
                 continue
             self.data.mocap_pos[mocap_id] = [robot.x, robot.y, self.ROBOT_Z]

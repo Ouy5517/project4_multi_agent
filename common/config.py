@@ -5,19 +5,31 @@ Booster T1 多机器人足球协同决策系统 — 配置参数
 """
 
 # ============================================================
-# 场地参数 (缩小版标准足球场)
+# 场地参数 (RoboCup KidSize, Booster T1/K1 官方标准)
 # ============================================================
 FIELD_WIDTH = 9.0             # 场地长度 (米), X轴方向
 FIELD_HEIGHT = 6.0            # 场地宽度 (米), Y轴方向
-GOAL_WIDTH = 2.0              # 球门宽度 (米), Y轴跨度
+GOAL_WIDTH = 2.6              # 球门宽度 (米), Y轴跨度 (Booster 标准 2.6m)
+GOAL_HEIGHT = 1.8             # 球门高度 (米), Z轴方向 (物理高度)
 GOAL_DEPTH = 0.5              # 球门深度 (米)
+GOAL_POST_WIDTH = 0.1         # 门柱宽度 (米), 10cm
 GOAL_X = FIELD_WIDTH / 2      # 对方球门 X 坐标
 OUR_GOAL_X = -FIELD_WIDTH / 2 # 己方球门 X 坐标
+
+# 禁区/罚球区 (RoboCup KidSize, Booster 官方 FD_KIDSIZE)
+# 参考: BoosterRobotics/robocup_demo types.h
+PENALTY_DIST = 1.5            # 罚球点到球门线距离 (米)
+PENALTY_AREA_LENGTH = 2.0     # 罚球区长度 (米), X轴
+PENALTY_AREA_WIDTH = 5.0      # 罚球区宽度 (米), Y轴
+GOAL_AREA_LENGTH = 1.0        # 球门区长度 (米), X轴
+GOAL_AREA_WIDTH = 3.0         # 球门区宽度 (米), Y轴
+CIRCLE_RADIUS = 0.75          # 中圈半径 (米)
 
 # ============================================================
 # 机器人物理参数
 # ============================================================
 ROBOT_MAX_SPEED = 0.5         # 最大移动速度 (m/s)
+OPPONENT_SPEED_FACTOR = 0.75  # 对手速度系数 (低于1=比蓝方慢)         # 最大移动速度 (m/s)
 ROBOT_RADIUS = 0.15           # 碰撞检测半径 (米)
 ROBOT_KICK_RANGE = 0.3        # 踢球最大距离 (米)
 ROBOT_KICK_POWER_MAX = 100    # 最大踢球力度
@@ -27,16 +39,16 @@ ROBOT_TURN_SPEED = 3.14159    # 转向速度 (rad/s)
 # ============================================================
 # 足球物理参数
 # ============================================================
-BALL_FRICTION = 0.95          # 每帧速度衰减系数
+BALL_FRICTION = 0.96          # 每帧速度衰减系数
 BALL_RADIUS = 0.05            # 球半径 (米)
 BALL_MIN_VELOCITY = 0.01      # 停止阈值 (m/s)
-KICK_POWER_SCALE = 0.05       # 力度→速度转换系数
+KICK_POWER_SCALE = 0.10       # 力度→速度转换系数
 
 # ============================================================
 # 策略阈值
 # ============================================================
-SHOOT_RANGE = 3.0             # 射门考虑范围 (米)
-PASS_MIN_DISTANCE = 1.0       # 最短传球距离 (米)
+SHOOT_RANGE = 4.5             # 射门考虑范围 (米)
+PASS_MIN_DISTANCE = 0.8       # 最短传球距离 (米)
 PASS_MAX_DISTANCE = 5.0       # 最长传球距离 (米)
 DRIBBLE_SPEED = 0.3           # 带球推进速度 (m/s)
 BLOCK_DISTANCE = 0.5          # 卡位防守距离 (米)

@@ -201,8 +201,10 @@ class WorldStateProvider:
             return create_default_world_state()
 
     def set_mock(self, ws: WorldState):
-        """设置 Mock 世界状态 (用于测试)"""
+        """Set mock world state and sync to simulator if available"""
         self._mock_ws = ws
+        if self._sim is not None:
+            self._sim.load_world_state(ws)
 
     def _from_simulator(self) -> WorldState:
         """从仿真器构建 WorldState"""
@@ -335,10 +337,91 @@ def create_threat_scenario() -> WorldState:
     )
 
 
+def create_pass_and_shoot_scenario() -> WorldState:
+    """chuanqiu->jieqiu->shemen lianxu changjing (2v1)
+    R1 zhongchang chiqiu chuangei qianchang R2, R2 jieqiu hou shemen
+    Buju: R1(-1.5,1.0) chuangei R2(1.5,-0.3), R2 ju qiumen 3m
+    """
+    return WorldState(
+        ball=Ball(x=-1.5, y=0.7),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-1.5, y=1.0, theta=0.5),
+            Robot(id=1, team=Team.BLUE, x=1.5, y=-0.3, theta=3.0),
+            Robot(id=2, team=Team.BLUE, x=-4.0, y=-2.5, theta=0.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=3.5, y=2.0, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=4.0, y=-2.0, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=0.0, y=-2.8, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_two_vs_two_scenario() -> WorldState:
+    """2v2 gongfang changjing
+    Lan fang: R1 zhongchang, R2 qianchang
+    Huang fang: O1 houwei, O2 menqian
+    """
+    return WorldState(
+        ball=Ball(x=-1.5, y=1.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-1.5, y=1.3, theta=0.3),
+            Robot(id=1, team=Team.BLUE, x=1.0, y=-0.3, theta=3.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=0.0, y=1.5, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=3.0, y=0.0, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_interference_scenario() -> WorldState:
+    """2v2 duishou ganrao: O1 lanjie chuanqiu, O2 fangshou"""
+    return WorldState(
+        ball=Ball(x=-2.0, y=0.8),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-2.0, y=1.3, theta=0.3),
+            Robot(id=1, team=Team.BLUE, x=1.5, y=-0.3, theta=3.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=-0.5, y=0.5, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=2.5, y=0.5, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+def create_interference_3v3_scenario() -> WorldState:
+    """3v3 duishou ganrao: O1 polan, O2 dingfang, O3 zhanwei"""
+    return WorldState(
+        ball=Ball(x=-1.5, y=0.5),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-1.5, y=1.0, theta=0.3),
+            Robot(id=1, team=Team.BLUE, x=1.0, y=-0.5, theta=3.0),
+            Robot(id=2, team=Team.BLUE, x=-4.0, y=-2.0, theta=0.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=0.0, y=0.5, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=1.5, y=-0.2, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=3.0, y=0.8, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
 # 场景注册表
 SCENARIOS = {
     "default": create_default_world_state,
     "pass": create_pass_scenario,
     "shoot": create_shoot_scenario,
     "threat": create_threat_scenario,
+    "pass-shoot": create_pass_and_shoot_scenario,
+    "2v2": create_two_vs_two_scenario,
+    "interference": create_interference_scenario,
+    "interference-3v3": create_interference_3v3_scenario,
 }

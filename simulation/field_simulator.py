@@ -189,6 +189,23 @@ class Simulator:
         """设置机器人转向目标"""
         self._turn_targets[robot_id] = theta % (2 * math.pi)
 
+    def load_world_state(self, ws):
+        """Load robot and ball positions from a WorldState"""
+        for r in ws.teammates:
+            if r.id in self.blue_robots:
+                self.blue_robots[r.id].x = r.x
+                self.blue_robots[r.id].y = r.y
+                self.blue_robots[r.id].theta = r.theta
+        for r in ws.opponents:
+            if r.id in self.yellow_robots:
+                self.yellow_robots[r.id].x = r.x
+                self.yellow_robots[r.id].y = r.y
+                self.yellow_robots[r.id].theta = r.theta
+        self.ball.x = ws.ball.x
+        self.ball.y = ws.ball.y
+        self.ball.vx = ws.ball.vx
+        self.ball.vy = ws.ball.vy
+
     def clear_move_target(self, robot_id: int):
         """清除移动目标"""
         self._move_targets.pop(robot_id, None)

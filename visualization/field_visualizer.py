@@ -16,6 +16,9 @@ from matplotlib.lines import Line2D
 from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH, GOAL_DEPTH,
     GOAL_X, OUR_GOAL_X, ROBOT_RADIUS, BALL_RADIUS,
+    GOAL_POST_WIDTH, CIRCLE_RADIUS,
+    PENALTY_AREA_LENGTH, PENALTY_AREA_WIDTH,
+    GOAL_AREA_LENGTH, GOAL_AREA_WIDTH,
 )
 from common.world_state import WorldState, Team
 from decision.decision_fsm import DecisionFSM, DecisionState
@@ -35,7 +38,7 @@ STATE_COLORS = {
 class MatplotlibVisualizer:
     """Matplotlib 实时 2D 可视化"""
 
-    def __init__(self, title: str = "Booster T1 Soccer Sim",
+    def __init__(self, title: str = "Booster T1 Soccer Sim", headless: bool = False,
                  save_gif: Optional[str] = None,
                  frame_skip: int = 3):
         self.title = title
@@ -44,11 +47,14 @@ class MatplotlibVisualizer:
         self._frame_count = 0
         self._ball_trail: List[Tuple[float, float]] = []
         self._trail_max = 40
+        self.headless = headless
         self._gif_frames: List = []
 
-        plt.ion()
+        if not self.headless:
+            plt.ion()
         self.fig, self.ax = plt.subplots(figsize=(11, 7.5))
-        self.fig.canvas.manager.set_window_title(title)
+        if not self.headless:
+            self.fig.canvas.manager.set_window_title(title)
 
     def render(self, ws: WorldState, fsm: DecisionFSM):
         """渲染当前帧"""
@@ -74,7 +80,8 @@ class MatplotlibVisualizer:
         self.ax.set_ylabel("Y (m)")
 
         self.fig.canvas.draw_idle()
-        plt.pause(0.001)
+        if not self.headless:
+            plt.pause(0.001)
 
         if self.save_gif and self._frame_count % self.frame_skip == 0:
             self.fig.canvas.draw()
@@ -105,8 +112,30 @@ class MatplotlibVisualizer:
                      alpha=0.7, zorder=1)
 
         # 中圈
-        self.ax.add_patch(Circle((0, 0), 0.8, fill=False,
+        self.ax.add_patch(Circle((0, 0), CIRCLE_RADIUS, fill=False,
                                edgecolor="white", linewidth=1, alpha=0.6, zorder=1))
+
+        # 罚球区 & 球门区
+        for gx, color in [(OUR_GOAL_X, "#1565C0"), (GOAL_X, "#F9A825")]:
+            sign = 1 if gx < 0 else -1
+            # 罚球区
+            pa_x = gx + sign * PENALTY_AREA_LENGTH if gx < 0 else gx
+            self.ax.add_patch(Rectangle(
+                (pa_x, -PENALTY_AREA_WIDTH / 2),
+                PENALTY_AREA_LENGTH * sign if gx < 0 else sign * PENALTY_AREA_LENGTH,
+                PENALTY_AREA_WIDTH,
+                facecolor="none", edgecolor=color, linewidth=1,
+                linestyle="--", alpha=0.5, zorder=1
+            ))
+            # 球门区
+            ga_x = gx + sign * GOAL_AREA_LENGTH if gx < 0 else gx
+            self.ax.add_patch(Rectangle(
+                (ga_x, -GOAL_AREA_WIDTH / 2),
+                GOAL_AREA_LENGTH * sign if gx < 0 else sign * GOAL_AREA_LENGTH,
+                GOAL_AREA_WIDTH,
+                facecolor="none", edgecolor=color, linewidth=1,
+                linestyle=":", alpha=0.4, zorder=1
+            ))
 
         # 球门
         for gx, color in [(OUR_GOAL_X, "#1565C0"), (GOAL_X, "#F9A825")]:
@@ -115,6 +144,14 @@ class MatplotlibVisualizer:
                 GOAL_DEPTH, GOAL_WIDTH,
                 facecolor=color, edgecolor="white", alpha=0.5, zorder=1
             ))
+            # 门柱 (左右各一根)
+            for post_y in [-GOAL_WIDTH / 2, GOAL_WIDTH / 2]:
+                self.ax.add_patch(Rectangle(
+                    (gx - GOAL_POST_WIDTH / 2, post_y - GOAL_POST_WIDTH / 2),
+                    GOAL_POST_WIDTH, GOAL_POST_WIDTH,
+                    facecolor="white", edgecolor="#333333",
+                    linewidth=1, zorder=2
+                ))
 
     def _draw_ball_trail(self):
         if len(self._ball_trail) < 2:
