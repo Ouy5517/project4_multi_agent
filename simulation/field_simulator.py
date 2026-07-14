@@ -9,6 +9,7 @@
 - 碰撞检测
 """
 
+from copy import deepcopy
 from typing import Dict, List, Tuple, Optional
 import math
 from common.config import (
@@ -70,6 +71,21 @@ class Simulator:
             robot = Robot(id=rid, team=Team.YELLOW, x=px, y=py, theta=math.pi)
             self.yellow_robots[rid] = robot
             self._init_positions[rid] = (px, py, math.pi)
+
+    def load_state(self, ball: Ball, blue_robots: List[Robot], yellow_robots: List[Robot]):
+        """Load a scenario as the single live simulator state."""
+        self.ball = deepcopy(ball)
+        self.blue_robots = {robot.id: deepcopy(robot) for robot in blue_robots}
+        self.yellow_robots = {robot.id: deepcopy(robot) for robot in yellow_robots}
+        self.timestamp = 0.0
+        self.tick_count = 0
+        self._move_targets.clear()
+        self._turn_targets.clear()
+        self._kick_queue.clear()
+        self._init_positions = {
+            robot.id: (robot.x, robot.y, robot.theta)
+            for robot in list(self.blue_robots.values()) + list(self.yellow_robots.values())
+        }
 
     # ================================================================
     # 主更新循环

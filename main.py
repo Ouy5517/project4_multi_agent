@@ -30,10 +30,14 @@ from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH
 )
 from common.world_state import (
-    WorldStateProvider, SCENARIOS, WorldState, Ball, Robot, Goal, Team, RobotRole
+    WorldStateProvider, WorldState, Ball, Robot, Goal, Team, RobotRole
 )
 from common.robot_action import MockRobotAction
 from simulation.field_simulator import Simulator
+from simulation.scenarios import (
+    ScenarioValidationError,
+    load_scenario_into_simulator,
+)
 from decision.decision_fsm import DecisionFSM
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
@@ -114,9 +118,14 @@ def parse_args():
         '--mode', choices=['mock', 'real'], default='mock',
         help='运行模式: mock=自包含2D仿真器 (默认), real=对接外部仿真器/SDK'
     )
+    scenario_choices = [
+        "default",
+        "pass", "shoot", "threat",
+        "pass_fixed", "dribble_open", "position_block",
+    ]
     parser.add_argument(
         '--scenario', default='default',
-        choices=list(SCENARIOS.keys()),
+        choices=scenario_choices,
         help='预设场景 (仅在 mock 模式下生效)'
     )
     parser.add_argument(
@@ -163,13 +172,19 @@ def main():
 
     if args.mode == 'mock':
         simulator = Simulator()
+        if args.scenario != 'default':
+            scenario_name = {
+                "pass": "pass_fixed",
+                "shoot": "dribble_open",
+                "threat": "position_block",
+            }.get(args.scenario, args.scenario)
+            try:
+                load_scenario_into_simulator(simulator, scenario_name)
+            except ScenarioValidationError as exc:
+                print(f"  错误: 场景加载失败: {exc}")
+                sys.exit(3)
         world_provider = WorldStateProvider(simulator)
         robot_action = MockRobotAction(simulator)
-
-        # 预设场景
-        if args.scenario != 'default':
-            scenario_ws = SCENARIOS[args.scenario]()
-            world_provider.set_mock(scenario_ws)
 
         print(f"  Mock 场景: {args.scenario}")
         print(f"  仿真器:    内置 2D 物理引擎")
