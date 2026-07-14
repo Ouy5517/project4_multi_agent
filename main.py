@@ -158,6 +158,14 @@ def parse_args():
         help='批量运行起始随机种子'
     )
     parser.add_argument(
+        '--world-source', default=None,
+        help='真实模式世界状态数据源'
+    )
+    parser.add_argument(
+        '--action-backend', default=None,
+        help='真实模式动作后端'
+    )
+    parser.add_argument(
         '--log-dir', default='outputs',
         help='日志输出目录 (默认: outputs/)'
     )
@@ -174,6 +182,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if args.mode == "real" and (not args.world_source or not args.action_backend):
+        print("  错误: --mode real 需要同时配置 --world-source 和 --action-backend")
+        print("  示例: python main.py --mode real --world-source ros2 --action-backend ros2 --strict")
+        sys.exit(3)
 
     if args.runs > 1:
         run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}-batch"
