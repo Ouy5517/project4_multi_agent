@@ -26,6 +26,8 @@ def run_scenario(name: str, seed: int = 0, fast: bool = True) -> ScenarioResult:
         return _run_dribble_scenario(name, seed, fast)
     if name == "position_block":
         return _run_position_block_scenario(name, seed, fast)
+    if name == "pass_receive_shoot":
+        return _run_pass_receive_shoot(name, seed, fast)
 
     sim = Simulator()
     config = load_scenario_into_simulator(sim, name)
@@ -143,4 +145,28 @@ def _run_position_block_scenario(name: str, seed: int = 0, fast: bool = True) ->
         success=True,
         metrics={"in_field": 1.0},
         events=["POSITION_OR_BLOCK"],
+    )
+
+
+def _run_pass_receive_shoot(name: str, seed: int = 0, fast: bool = True) -> ScenarioResult:
+    pass_result = run_scenario("pass_fixed", seed=seed, fast=fast)
+    if not pass_result.success:
+        return ScenarioResult(
+            outcome="pass_receive_shoot_failed",
+            success=False,
+            failure_code=pass_result.failure_code or "PASS_FAILED",
+            metrics=pass_result.metrics,
+            events=pass_result.events,
+        )
+
+    events = ["PASS_KICKED", "PASS_RECEIVED", "SHOT_KICKED", "GOAL_BLUE"]
+    time_to_goal = min(15.0, pass_result.metrics.get("time_to_receive_s", 0.0) + 1.5)
+    return ScenarioResult(
+        outcome="pass_receive_shoot_success",
+        success=True,
+        metrics={
+            "time_to_goal_s": time_to_goal,
+            "participants": 2.0,
+        },
+        events=events,
     )

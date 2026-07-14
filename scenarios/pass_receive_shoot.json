@@ -1,0 +1,17 @@
+{
+  "name": "pass_receive_shoot",
+  "duration_s": 15.0,
+  "seed": 1101,
+  "ball": {"x": -2.0, "y": 0.0, "vx": 0.0, "vy": 0.0},
+  "blue": [
+    {"id": 0, "x": -2.0, "y": 0.2, "theta": 0.0},
+    {"id": 1, "x": 0.8, "y": 0.2, "theta": 0.0},
+    {"id": 2, "x": -3.5, "y": -0.8, "theta": 0.0}
+  ],
+  "yellow": [
+    {"id": 10, "x": 3.2, "y": 1.0, "theta": 3.141592653589793},
+    {"id": 11, "x": 2.5, "y": -1.4, "theta": 3.141592653589793},
+    {"id": 12, "x": 3.9, "y": 0.0, "theta": 3.141592653589793}
+  ],
+  "expect": {"outcome": "pass_receive_shoot_success", "passer_id": 0, "receiver_id": 1}
+}
