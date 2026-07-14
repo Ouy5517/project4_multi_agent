@@ -23,6 +23,7 @@ from common.world_state import (
     WorldState, Robot, Ball, Team, RobotRole
 )
 from common.robot_action import RobotActionInterface
+from common.events import DecisionEvent
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
@@ -66,6 +67,7 @@ class DecisionLog:
     y: float = 0.0
     action: str = ""          # "move", "kick", "stop", "wait"
     action_params: dict = field(default_factory=dict)
+    reason_code: str = ""
     reason: str = ""
 
 
@@ -138,6 +140,7 @@ class DecisionFSM:
         # 日志
         self.transitions: List[FSMTransition] = []  # 当前帧的转换
         self.decision_logs: List[DecisionLog] = []  # 累积日志
+        self._decision_events: List[DecisionEvent] = []
 
         # 回合统计
         self.tick_count: int = 0
@@ -421,12 +424,20 @@ class DecisionFSM:
 
     def _log_decisions(self, ws: WorldState, roles: Dict[int, RobotRole]):
         """记录当前帧的决策"""
+        transition_by_robot = {t.robot_id: t for t in self.transitions}
         for robot_id in range(self._num_robots):
             fsm = self._fsms[robot_id]
             robot = ws.get_robot_by_id(robot_id)
             role = roles.get(robot_id, RobotRole.IDLE)
 
             if robot:
+                transition = transition_by_robot.get(robot_id)
+                if transition is None:
+                    reason_code = "MAINTAIN_STATE"
+                    reason = f"remain in {fsm.state.value}"
+                else:
+                    reason_code = f"{transition.from_state.value}_TO_{transition.to_state.value}"
+                    reason = transition.reason
                 log = DecisionLog(
                     tick=self.tick_count,
                     timestamp=ws.timestamp,
@@ -436,9 +447,21 @@ class DecisionFSM:
                     x=robot.x,
                     y=robot.y,
                     action="move" if self._action.is_moving(robot_id) else "wait",
-                    reason=""
+                    reason_code=reason_code,
+                    reason=reason,
                 )
                 self.decision_logs.append(log)
+                self._decision_events.append(
+                    DecisionEvent(
+                        tick=log.tick,
+                        timestamp=log.timestamp,
+                        robot_id=log.robot_id,
+                        state=log.state,
+                        role=log.role,
+                        reason_code=log.reason_code,
+                        reason=log.reason,
+                    )
+                )
 
     # ================================================================
     # 查询接口
@@ -446,6 +469,11 @@ class DecisionFSM:
 
     def get_state(self, robot_id: int) -> DecisionState:
         return self._fsms[robot_id].state
+
+    def drain_decision_events(self) -> List[DecisionEvent]:
+        events = list(self._decision_events)
+        self._decision_events.clear()
+        return events
 
     def get_decision_summary(self) -> dict:
         """决策统计摘要"""

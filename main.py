@@ -21,6 +21,7 @@ import os
 import time
 import argparse
 import json
+from pathlib import Path
 
 # 确保项目根目录在路径中
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +34,7 @@ from common.world_state import (
     WorldStateProvider, WorldState, Ball, Robot, Goal, Team, RobotRole
 )
 from common.robot_action import MockRobotAction
+from common.events import OutcomeEvent
 from simulation.field_simulator import Simulator
 from simulation.scenarios import (
     ScenarioValidationError,
@@ -42,6 +44,7 @@ from decision.decision_fsm import DecisionFSM
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
+from telemetry.run_recorder import RunRecorder
 
 # 真实模式桥接层 (导入失败不阻塞, 仅 --mode real 时需要)
 try:
@@ -212,6 +215,8 @@ def main():
 
     # 日志目录
     os.makedirs(args.log_dir, exist_ok=True)
+    run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}"
+    recorder = RunRecorder(Path(args.log_dir) / run_id, args.scenario, seed=0)
 
     total_ticks = int(args.duration / DT)
     if total_ticks > MAX_TICKS:
@@ -237,6 +242,26 @@ def main():
 
         # 3. 运行决策引擎
         fsm.update(world_state, DT)
+        if hasattr(robot_action, "drain_events"):
+            for event in robot_action.drain_events():
+                recorder.record_event(event)
+        for event in fsm.drain_decision_events():
+            recorder.record_event(event)
+        recorder.record_trajectory(
+            tick=fsm.tick_count,
+            timestamp=world_state.timestamp,
+            ball=(world_state.ball.x, world_state.ball.y, world_state.ball.vx, world_state.ball.vy),
+            robots=[
+                {
+                    "id": robot.id,
+                    "x": robot.x,
+                    "y": robot.y,
+                    "state": fsm.get_state(robot.id).value if robot.id in fsm._fsms else "",
+                    "role": robot.role.value,
+                }
+                for robot in world_state.all_robots()
+            ],
+        )
 
         # 4. 渲染
         if visualizer:
@@ -281,6 +306,17 @@ def main():
         csv_path = os.path.join(args.log_dir, "decision_log.csv")
         fsm.export_csv(csv_path)
         print(f"\n  📁 决策日志已导出: {csv_path}")
+
+    recorder.finish(
+        OutcomeEvent(
+            tick=fsm.tick_count,
+            timestamp=world_state.timestamp,
+            outcome="run_completed",
+            success=True,
+            metrics={"duration_s": float(args.duration), "ticks": float(total_ticks)},
+        )
+    )
+    print(f"  运行产物: {recorder.output_dir}")
 
 
 def _check_goal(ws: WorldState):
