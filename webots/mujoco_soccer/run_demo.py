@@ -399,7 +399,8 @@ class DemoRunner:
         start_ball = self.ball_xy()
         start, push = plan_push(robot, start_ball, target_xy, speed, min_disp, key)
         self.move_all_until({robot: start}, stage + "_MOVE_BEHIND_BALL", 10.0)
-        self.controllers[robot].push_pose = 1.0
+        self.controllers[robot].start_kick_swing(key)
+        self.controllers[robot].push_pose = 0.35
         self.controllers[robot].set_target(BaseTarget(push.target_x, push.target_y, math.atan2(push.direction_y, push.direction_x), max_speed=speed))
         before_count = len(self.contacts)
         enter = float(self.data.time)
@@ -412,6 +413,7 @@ class DemoRunner:
                 reached = True
                 break
         self.controllers[robot].push_pose = 0.0
+        self.controllers[robot].kick_swing.stop()
         self.hold_robots({robot: BaseTarget(0.0, 0.0, 0.0)})
         self.run_for(0.35, stage + "_RECOVER")
         end_ball = self.ball_xy()
@@ -449,7 +451,8 @@ class DemoRunner:
         self.move_all_until({"T1_BLUE_1": start}, stage + "_PASS_ALIGN", 6.0)
         stable_ball = self.ball_xy()
         before_count = len(self.contacts)
-        self.controllers["T1_BLUE_1"].push_pose = 1.0
+        self.controllers["T1_BLUE_1"].start_kick_swing("pass")
+        self.controllers["T1_BLUE_1"].push_pose = 0.35
         self.controllers["T1_BLUE_1"].set_target(
             BaseTarget(push.target_x, push.target_y, math.atan2(push.direction_y, push.direction_x), max_speed=pass_push_speed)
         )
@@ -474,6 +477,7 @@ class DemoRunner:
                 else:
                     other_robot_contact = True
         self.controllers["T1_BLUE_1"].push_pose = 0.0
+        self.controllers["T1_BLUE_1"].kick_swing.stop()
         self.hold_robots({"T1_BLUE_1": BaseTarget(0.0, 0.0, 0.0)})
 
         observe_enter = float(self.data.time)

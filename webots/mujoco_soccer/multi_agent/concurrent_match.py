@@ -379,7 +379,10 @@ class ConcurrentMatch:
                 x, y = self._robot_positions()[robot]
                 if math.hypot(x - start.x, y - start.y) < 0.10:
                     target = BaseTarget(push.target_x, push.target_y, math.atan2(push.direction_y, push.direction_x), max_speed=max(0.045, min(0.24, target.max_speed)))
-                    self.controllers[robot].push_pose = 1.0
+                    # 对齐后启动踢球肢体动画 (dribble/pass/shoot)
+                    if not self.controllers[robot].kick_swing.active:
+                        self.controllers[robot].start_kick_swing(command.kick_action)
+                    self.controllers[robot].push_pose = 0.35
                 else:
                     target = start
                     self.controllers[robot].push_pose = 0.2

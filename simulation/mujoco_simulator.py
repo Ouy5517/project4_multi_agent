@@ -8,7 +8,8 @@ MuJoCo 3D 仿真器 (完整版)
 
 支持:
 - 3v3 完整场景 (蓝方 + 黄方 共 6 机器人)
-- 人形几何体机器人 (近似 Booster T1)
+- 铰接人形机器人 (髋/膝/肩可动)
+- 踢球肢体动画 (蓄力→摆腿→触球→收回)
 - 决策状态光圈 (底部颜色环)
 - 传球连线可视化
 - 自由视角交互
@@ -25,6 +26,7 @@ import mujoco
 from common.config import DT, NUM_ROBOTS_PER_TEAM
 from common.world_state import Ball, Robot, Team, RobotRole, WorldState
 from simulation.field_simulator import Simulator
+from simulation.limb_animator import LimbAnimator, JointPose, style_from_power
 
 
 # ================================================================
@@ -56,12 +58,23 @@ def _find_xml(xml_name: str) -> str:
     return path
 
 
+# 每个机器人的肢体关节名后缀 → JointPose 属性
+_LIMB_JOINT_SUFFIXES = (
+    ("r_hip", "r_hip"),
+    ("r_knee", "r_knee"),
+    ("l_hip", "l_hip"),
+    ("l_knee", "l_knee"),
+    ("r_shoulder", "r_shoulder"),
+    ("l_shoulder", "l_shoulder"),
+)
+
+
 class MuJoCoSimulator(Simulator):
     """
     2D 逻辑仿真 + MuJoCo 3D 可视化。
 
     与 Simulator 接口兼容, 可直接配合 WorldStateProvider / MockRobotAction。
-    支持完整的 3v3 场景, 包括机器人状态光圈和传球连线。
+    支持完整的 3v3 场景, 包括机器人状态光圈、传球连线和踢球肢体动画。
     """
 
     # 机器人 mocap 原点离地高度
@@ -97,6 +110,9 @@ class MuJoCoSimulator(Simulator):
 
         # 初始化机器人 mocap ID 映射
         self._robot_mocap_ids: Dict[int, int] = {}
+        # robot_id → {pose_attr → qposadr}
+        self._limb_qpos: Dict[int, Dict[str, int]] = {}
+        self._limb_animator = LimbAnimator()
         self._init_robot_mappings()
 
         # 初始化传球线 mocap ID 和 geom ID
@@ -109,7 +125,7 @@ class MuJoCoSimulator(Simulator):
     # ================================================================
 
     def _init_robot_mappings(self):
-        """建立 robot_id → mocap_id 和 ring_geom_id 的映射"""
+        """建立 robot_id → mocap_id / ring_geom_id / 肢体关节 的映射"""
         for rid in list(self.blue_robots.keys()) + list(self.yellow_robots.keys()):
             body_name = f"robot_{rid}"
             try:
@@ -122,6 +138,7 @@ class MuJoCoSimulator(Simulator):
                 self._robot_mocap_ids[rid] = mocap_id
             except Exception:
                 print(f"  警告: 未找到 body '{body_name}', 跳过")
+                continue
 
             # 查找对应的 ring geom
             ring_name = f"robot_{rid}_ring"
@@ -131,6 +148,17 @@ class MuJoCoSimulator(Simulator):
                 self._ring_geom_ids[rid] = ring_id
             except Exception:
                 pass  # ring geom 可选
+
+            # 肢体关节 qpos 地址
+            joint_map: Dict[str, int] = {}
+            for suffix, attr in _LIMB_JOINT_SUFFIXES:
+                jname = f"robot_{rid}_{suffix}"
+                try:
+                    joint_map[attr] = self._joint_qposadr(jname)
+                except Exception:
+                    pass
+            if joint_map:
+                self._limb_qpos[rid] = joint_map
 
     def _init_pass_lines(self):
         """查找传球线 mocap body 和 geom"""
@@ -198,15 +226,58 @@ class MuJoCoSimulator(Simulator):
         self._move_targets.clear()
         self._turn_targets.clear()
         self._kick_queue.clear()
+        self._limb_animator.reset()
         self.sync_to_mujoco()
 
+    def queue_kick(self, robot_id: int, power: float, direction: float):
+        """排队踢球: 先播肢体动画, 触球帧再施加冲量 (低力度=带球轻触)"""
+        self._limb_animator.start_kick(
+            robot_id, power, direction, style=style_from_power(power))
+
     def update(self, dt: float = DT):
-        """2D 物理更新 + 同步到 MuJoCo"""
+        """2D 物理更新 + 肢体动画 + 同步到 MuJoCo"""
+        moving_ids = set(self._move_targets.keys())
+        turning = self._collect_turning()
+        braking_ids = self._collect_braking()
+        self._limb_animator.step(
+            dt,
+            moving_ids=moving_ids,
+            turning=turning,
+            braking_ids=braking_ids,
+        )
+        for rid, power, direction in self._limb_animator.pop_ready_impulses():
+            self._kick_queue.append((rid, power, direction))
+
         super().update(dt)
         self.sync_to_mujoco()
 
+    def _collect_turning(self) -> Dict[int, float]:
+        """robot_id → 有符号剩余转角 (用于转向肢体姿态)"""
+        result: Dict[int, float] = {}
+        all_robots = {**self.blue_robots, **self.yellow_robots}
+        for rid, target_theta in self._turn_targets.items():
+            robot = all_robots.get(rid)
+            if robot is None:
+                continue
+            diff = self._angle_diff(target_theta, robot.theta)
+            if abs(diff) > 0.08:
+                result[rid] = diff
+        return result
+
+    def _collect_braking(self) -> set:
+        """接近移动目标时进入刹车姿态"""
+        braking = set()
+        all_robots = {**self.blue_robots, **self.yellow_robots}
+        for rid, (tx, ty) in self._move_targets.items():
+            robot = all_robots.get(rid)
+            if robot is None:
+                continue
+            dist = math.sqrt((tx - robot.x) ** 2 + (ty - robot.y) ** 2)
+            if 0.05 < dist < 0.45:
+                braking.add(rid)
+        return braking
     def sync_to_mujoco(self):
-        """将当前 2D 状态写入 MuJoCo data"""
+        """将当前 2D 状态与肢体关节写入 MuJoCo data"""
 
         # --- 足球 ---
         adr = self._ball_qposadr
@@ -226,7 +297,17 @@ class MuJoCoSimulator(Simulator):
             quat = _yaw_to_quat(robot.theta)
             self.data.mocap_quat[mocap_id] = list(quat)
 
+        # --- 肢体关节 ---
+        self._apply_limb_poses()
+
         mujoco.mj_forward(self.model, self.data)
+
+    def _apply_limb_poses(self):
+        """把 LimbAnimator 的姿态写入各机器人关节 qpos"""
+        for rid, joint_map in self._limb_qpos.items():
+            pose: JointPose = self._limb_animator.get_pose(rid)
+            for attr, qadr in joint_map.items():
+                self.data.qpos[qadr] = getattr(pose, attr, 0.0)
 
     # ================================================================
     # 状态光圈 (根据 FSM 决策状态更新)
@@ -331,6 +412,7 @@ class MuJoCoSimulator(Simulator):
 
     def reset(self):
         super().reset()
+        self._limb_animator.reset()
         # 重置所有光圈为默认色
         for rid in self._ring_geom_ids:
             self._set_geom_rgba(self._ring_geom_ids[rid], DEFAULT_RING_COLOR)

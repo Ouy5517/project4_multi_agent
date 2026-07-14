@@ -1,5 +1,5 @@
 <mujoco model="soccer_full">
-  <!-- Booster T1 多机器人足球 — 完整 3D 场景 -->
+  <!-- Booster T1 multi-robot soccer — hinged limbs for kick/walk animation -->
   <option timestep="0.002" gravity="0 0 -9.81"/>
 
   <visual>
@@ -20,46 +20,34 @@
   </asset>
 
   <worldbody>
-    <!-- ====== 灯光 ====== -->
     <light pos="0 0 10" dir="0 0 -1" diffuse="1 1 1" castshadow="true"/>
     <light pos="5 3 8" dir="-0.5 -0.3 -1" diffuse="0.3 0.35 0.4"/>
     <light pos="-5 -3 6" dir="0.5 0.3 -1" diffuse="0.2 0.2 0.25"/>
 
-    <!-- ====== 地面 ====== -->
     <geom name="floor" type="plane" size="6 5 0.1" material="matplane"/>
 
-    <!-- ====== 场地标线 (9m x 6m, half=4.5 x 3) ====== -->
-    <!-- 边线 -->
     <geom name="line_top"    type="box" pos="0 3.0 0.006" size="4.6 0.025 0.005" material="matline" contype="0" conaffinity="0"/>
     <geom name="line_bottom" type="box" pos="0 -3.0 0.006" size="4.6 0.025 0.005" material="matline" contype="0" conaffinity="0"/>
     <geom name="line_left"   type="box" pos="-4.5 0 0.006" size="0.025 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
     <geom name="line_right"  type="box" pos="4.5 0 0.006" size="0.025 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
-    <!-- 中线 -->
     <geom name="line_center" type="box" pos="0 0 0.006" size="0.02 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
-    <!-- 中圈 (用细 box 近似 octagon, 或用多个 site — 简化: 细圆环用半透明 disc) -->
     <geom name="circle_center" type="cylinder" pos="0 0 0.005" size="0.8 0.003" rgba="1 1 1 0.45" contype="0" conaffinity="0"/>
 
-    <!-- ====== 球门框 (左: 蓝方球门, 右: 黄方球门) ====== -->
-    <!-- 左球门 (-4.5, y ∈ [-1,1]) -->
     <geom name="goal_left_post_top"    type="box" pos="-4.5 1.0 0.35" size="0.03 0.03 0.35" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_left_post_bottom" type="box" pos="-4.5 -1.0 0.35" size="0.03 0.03 0.35" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_left_bar"         type="box" pos="-4.5 0 0.70" size="0.03 1.0 0.03" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_left_net"         type="box" pos="-4.75 0 0.35" size="0.01 1.0 0.35" material="matgoal_net" contype="0" conaffinity="0"/>
-
-    <!-- 右球门 (+4.5, y ∈ [-1,1]) -->
     <geom name="goal_right_post_top"    type="box" pos="4.5 1.0 0.35" size="0.03 0.03 0.35" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_right_post_bottom" type="box" pos="4.5 -1.0 0.35" size="0.03 0.03 0.35" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_right_bar"         type="box" pos="4.5 0 0.70" size="0.03 1.0 0.03" material="matgoal_post" contype="0" conaffinity="0"/>
     <geom name="goal_right_net"         type="box" pos="4.75 0 0.35" size="0.01 1.0 0.35" material="matgoal_net" contype="0" conaffinity="0"/>
 
-    <!-- ====== 足球 (freejoint, 位置由 Python 同步) ====== -->
     <body name="ball" pos="0 0 0.05">
       <freejoint name="ball_joint"/>
       <geom name="ball_geom" type="sphere" size="0.05"
             rgba="1 1 1 1" mass="0.045" friction="0.3 0.3 0.001"/>
     </body>
 
-    <!-- ====== 传球连线 (mocap, 默认隐藏, PASS 时由 Python 显示) ====== -->
     <body name="pass_line_0" mocap="true" pos="0 0 0.03">
       <geom name="pass_line_0_geom" type="box" size="0.5 0.012 0.004"
             rgba="0.3 1.0 0.15 0" contype="0" conaffinity="0"/>
@@ -73,84 +61,273 @@
             rgba="0.3 1.0 0.15 0" contype="0" conaffinity="0"/>
     </body>
 
-    <!-- ====== 蓝方机器人 (己方, ID 0/1/2) ====== -->
-    <!-- robot_0 -->
     <body name="robot_0" mocap="true" pos="-1 0 0">
       <geom name="robot_0_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_0_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      <geom name="robot_0_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_0_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_0_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_0_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_0_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_0_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_0_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_0_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_0_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_0_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_0_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_0_r_knee" pos="0 0 -0.12">
+          <joint name="robot_0_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_0_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_0_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_0_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_0_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_0_l_knee" pos="0 0 -0.12">
+          <joint name="robot_0_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_0_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
-    <!-- robot_1 -->
+
     <body name="robot_1" mocap="true" pos="-2 1.5 0">
       <geom name="robot_1_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_1_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      <geom name="robot_1_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_1_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_1_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_1_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_1_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_1_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_1_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_1_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_1_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_1_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_1_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_1_r_knee" pos="0 0 -0.12">
+          <joint name="robot_1_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_1_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_1_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_1_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_1_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_1_l_knee" pos="0 0 -0.12">
+          <joint name="robot_1_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_1_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
-    <!-- robot_2 -->
+
     <body name="robot_2" mocap="true" pos="-2.5 0 0">
       <geom name="robot_2_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_2_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      <geom name="robot_2_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_2_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_2_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_2_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_2_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_2_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_2_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_2_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_2_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_2_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_2_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_2_r_knee" pos="0 0 -0.12">
+          <joint name="robot_2_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_2_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_2_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_2_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_2_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        <body name="robot_2_l_knee" pos="0 0 -0.12">
+          <joint name="robot_2_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_2_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.18 0.42 0.92 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
-    <!-- ====== 黄方机器人 (对手, ID 10/11/12) ====== -->
-    <!-- robot_10 -->
+
     <body name="robot_10" mocap="true" pos="1 0 0">
       <geom name="robot_10_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_10_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      <geom name="robot_10_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_10_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_10_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_10_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_10_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_10_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_10_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_10_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_10_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_10_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_10_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_10_r_knee" pos="0 0 -0.12">
+          <joint name="robot_10_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_10_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_10_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_10_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_10_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_10_l_knee" pos="0 0 -0.12">
+          <joint name="robot_10_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_10_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
-    <!-- robot_11 -->
+
     <body name="robot_11" mocap="true" pos="2 -1.5 0">
       <geom name="robot_11_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_11_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      <geom name="robot_11_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_11_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_11_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_11_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_11_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_11_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_11_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_11_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_11_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_11_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_11_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_11_r_knee" pos="0 0 -0.12">
+          <joint name="robot_11_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_11_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_11_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_11_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_11_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_11_l_knee" pos="0 0 -0.12">
+          <joint name="robot_11_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_11_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
-    <!-- robot_12 -->
+
     <body name="robot_12" mocap="true" pos="2.5 0 0">
       <geom name="robot_12_ring" type="cylinder" size="0.14 0.004" pos="0 0 0.003"
             rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.045 0 0.02 0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.045 0 0.02 -0.045 0 0.24" size="0.028" rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
-      <geom type="box" pos="0 0 0.33" size="0.065 0.05 0.11" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0.08 0 0.33 0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="-0.08 0 0.33 -0.20 0 0.33" size="0.018" rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
-      <geom type="sphere" pos="0 0 0.48" size="0.045" rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
-      <geom type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+      <geom name="robot_12_torso" type="box" pos="0 0 0.33" size="0.065 0.05 0.11"
+            rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      <geom name="robot_12_head" type="sphere" pos="0 0 0.48" size="0.045"
+            rgba="0.85 0.85 0.85 1" contype="0" conaffinity="0"/>
+      <geom name="robot_12_face" type="capsule" fromto="0 0 0.33 0.12 0 0.33" size="0.012"
+            rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+
+      <body name="robot_12_r_shoulder" pos="0.08 0 0.38">
+        <joint name="robot_12_r_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_12_r_arm" type="capsule" fromto="0 0 0 0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+      <body name="robot_12_l_shoulder" pos="-0.08 0 0.38">
+        <joint name="robot_12_l_shoulder" type="hinge" axis="0 1 0" range="-2.5 2.5" damping="1"/>
+        <geom name="robot_12_l_arm" type="capsule" fromto="0 0 0 -0.12 0 -0.02" size="0.018"
+              rgba="0.95 0.75 0.1 1" contype="0" conaffinity="0"/>
+      </body>
+
+      <body name="robot_12_r_hip" pos="0.045 0 0.24">
+        <joint name="robot_12_r_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_12_r_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_12_r_knee" pos="0 0 -0.12">
+          <joint name="robot_12_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_12_r_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
+
+      <body name="robot_12_l_hip" pos="-0.045 0 0.24">
+        <joint name="robot_12_l_hip" type="hinge" axis="0 1 0" range="-2.2 1.2" damping="1"/>
+        <geom name="robot_12_l_thigh" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.028"
+              rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        <body name="robot_12_l_knee" pos="0 0 -0.12">
+          <joint name="robot_12_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.2" damping="1"/>
+          <geom name="robot_12_l_shank" type="capsule" fromto="0 0 0 0 0 -0.12" size="0.025"
+                rgba="0.85 0.65 0.08 1" contype="0" conaffinity="0"/>
+        </body>
+      </body>
     </body>
 
   </worldbody>

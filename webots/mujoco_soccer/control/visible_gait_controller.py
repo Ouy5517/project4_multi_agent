@@ -64,11 +64,17 @@ class VisibleGaitController:
         push_pose: float = 0.0,
         motion_step: float = 0.0,
         yaw_step: float = 0.0,
+        kick_offsets: dict[str, float] | None = None,
+        braking: float = 0.0,
     ) -> None:
+        kick_offsets = kick_offsets or {}
+        kick_blend = min(1.0, sum(abs(v) for v in kick_offsets.values()) / 0.8) if kick_offsets else 0.0
+        kick_blend = min(1.0, kick_blend)
+
         if self.path_coupled:
             step_length = 0.30
             turn_equiv = min(0.035, abs(yaw_step) * 0.10)
-            if moving or push_pose > 1e-4:
+            if moving or push_pose > 1e-4 or kick_blend > 0.05:
                 self.phase = (self.phase + 2.0 * math.pi * (motion_step + turn_equiv) / step_length) % (2.0 * math.pi)
                 self.fade = min(1.0, self.fade + dt / 0.20)
             else:
@@ -79,52 +85,67 @@ class VisibleGaitController:
             fade = self.fade
         else:
             phase = 2.0 * math.pi * (sim_time % 1.0)
-            fade = 1.0 if moving else 0.0
+            fade = 1.0 if moving or kick_blend > 0.05 else 0.0
+
         left = math.sin(phase)
         right = -left
+        # 踢球时压低步态振幅, 突出摆腿
+        gait_scale = max(0.15, 1.0 - 0.85 * kick_blend)
+        brake = max(0.0, min(1.0, braking))
+
         if self.path_coupled:
             turn_bias = min(1.0, abs(yaw_step) / max(dt, 1e-6) / math.radians(35.0))
             targets = {
-                "Left_Hip_Pitch": 0.30 * left + 0.12 * push_pose,
-                "Right_Hip_Pitch": 0.28 * right + 0.28 * push_pose,
-                "Left_Knee_Pitch": 0.12 + 0.42 * max(0.0, -left) + 0.05 * max(0.0, right),
-                "Right_Knee_Pitch": 0.13 + 0.38 * max(0.0, -right) + 0.10 * push_pose,
-                "Left_Ankle_Pitch": -0.12 * left,
-                "Right_Ankle_Pitch": -0.11 * right - 0.12 * push_pose,
-                "Left_Hip_Roll": 0.08 * math.cos(phase) + 0.04 * turn_bias,
-                "Right_Hip_Roll": -0.08 * math.cos(phase) - 0.03 * turn_bias,
-                "Left_Shoulder_Pitch": 0.24 * right - 0.04 * turn_bias,
-                "Right_Shoulder_Pitch": 0.24 * left - 0.16 * push_pose - 0.04 * turn_bias,
-                "Left_Elbow_Pitch": 0.16 + 0.13 * max(0.0, left),
-                "Right_Elbow_Pitch": 0.16 + 0.13 * max(0.0, right),
-                "Waist": 0.07 * math.sin(phase) + 0.06 * push_pose,
-                "AAHead_yaw": 0.04 * math.sin(phase * 0.5),
-                "Head_pitch": 0.08 - 0.04 * push_pose,
+                "Left_Hip_Pitch": (0.30 * left + 0.12 * push_pose) * gait_scale,
+                "Right_Hip_Pitch": (0.28 * right + 0.28 * push_pose) * gait_scale,
+                "Left_Knee_Pitch": (0.12 + 0.42 * max(0.0, -left) + 0.05 * max(0.0, right)) * gait_scale + 0.22 * brake,
+                "Right_Knee_Pitch": (0.13 + 0.38 * max(0.0, -right) + 0.10 * push_pose) * gait_scale + 0.22 * brake,
+                "Left_Ankle_Pitch": -0.12 * left * gait_scale,
+                "Right_Ankle_Pitch": (-0.11 * right - 0.12 * push_pose) * gait_scale,
+                "Left_Hip_Roll": 0.08 * math.cos(phase) * gait_scale + 0.04 * turn_bias,
+                "Right_Hip_Roll": -0.08 * math.cos(phase) * gait_scale - 0.03 * turn_bias,
+                "Left_Shoulder_Pitch": (0.24 * right - 0.04 * turn_bias) * gait_scale,
+                "Right_Shoulder_Pitch": (0.24 * left - 0.16 * push_pose - 0.04 * turn_bias) * gait_scale,
+                "Left_Elbow_Pitch": 0.16 + 0.13 * max(0.0, left) * gait_scale,
+                "Right_Elbow_Pitch": 0.16 + 0.13 * max(0.0, right) * gait_scale,
+                "Waist": (0.07 * math.sin(phase) + 0.06 * push_pose) * gait_scale + 0.05 * turn_bias,
+                "AAHead_yaw": 0.04 * math.sin(phase * 0.5) + 0.08 * turn_bias * math.copysign(1.0, yaw_step or 1.0),
+                "Head_pitch": 0.08 - 0.04 * push_pose + 0.06 * brake,
             }
         else:
+            turn_bias = min(1.0, abs(yaw_step) / max(dt, 1e-6) / math.radians(40.0)) if dt > 0 else 0.0
             targets = {
-                "Left_Hip_Pitch": 0.24 * left + 0.12 * push_pose,
-                "Right_Hip_Pitch": 0.24 * right + 0.28 * push_pose,
-                "Left_Knee_Pitch": 0.18 + 0.32 * max(0.0, -left),
-                "Right_Knee_Pitch": 0.18 + 0.32 * max(0.0, -right) + 0.10 * push_pose,
-                "Left_Ankle_Pitch": -0.10 * left,
-                "Right_Ankle_Pitch": -0.10 * right - 0.12 * push_pose,
-                "Left_Hip_Roll": 0.06 * math.cos(phase),
-                "Right_Hip_Roll": -0.06 * math.cos(phase),
-                "Left_Shoulder_Pitch": 0.32 * right,
-                "Right_Shoulder_Pitch": 0.32 * left - 0.16 * push_pose,
-                "Left_Elbow_Pitch": 0.20 + 0.16 * max(0.0, left),
-                "Right_Elbow_Pitch": 0.20 + 0.16 * max(0.0, right),
-                "Waist": 0.08 * math.sin(phase),
+                "Left_Hip_Pitch": (0.24 * left + 0.12 * push_pose) * gait_scale,
+                "Right_Hip_Pitch": (0.24 * right + 0.28 * push_pose) * gait_scale,
+                "Left_Knee_Pitch": (0.18 + 0.32 * max(0.0, -left)) * gait_scale + 0.22 * brake,
+                "Right_Knee_Pitch": (0.18 + 0.32 * max(0.0, -right) + 0.10 * push_pose) * gait_scale + 0.22 * brake,
+                "Left_Ankle_Pitch": -0.10 * left * gait_scale,
+                "Right_Ankle_Pitch": (-0.10 * right - 0.12 * push_pose) * gait_scale,
+                "Left_Hip_Roll": 0.06 * math.cos(phase) * gait_scale + 0.05 * turn_bias,
+                "Right_Hip_Roll": -0.06 * math.cos(phase) * gait_scale - 0.05 * turn_bias,
+                "Left_Shoulder_Pitch": 0.32 * right * gait_scale,
+                "Right_Shoulder_Pitch": (0.32 * left - 0.16 * push_pose) * gait_scale,
+                "Left_Elbow_Pitch": 0.20 + 0.16 * max(0.0, left) * gait_scale,
+                "Right_Elbow_Pitch": 0.20 + 0.16 * max(0.0, right) * gait_scale,
+                "Waist": 0.08 * math.sin(phase) * gait_scale + 0.06 * turn_bias,
                 "AAHead_yaw": 0.05 * math.sin(phase * 0.5),
-                "Head_pitch": 0.08,
+                "Head_pitch": 0.08 + 0.06 * brake,
             }
-        if moving:
+
+        # 叠加踢球肢体偏移
+        for joint, offset in kick_offsets.items():
+            targets[joint] = targets.get(joint, 0.0) + offset
+
+        if moving or kick_blend > 0.05:
             self.stats.active_seconds += dt
         for joint, value in targets.items():
+            if joint not in self.act_ids:
+                continue
             qid = self.joint_ids[joint]
             low, high = self.model.jnt_range[qid]
-            clipped = max(float(low), min(float(high), fade * value))
+            # 有踢球相位时保持肢体动作可见 (不完全被 gait fade 压掉)
+            apply = value if kick_blend >= 0.05 else fade * value
+            clipped = max(float(low), min(float(high), apply))
             data.ctrl[self.act_ids[joint]] = clipped
             qadr = self.model.jnt_qposadr[qid]
             self.stats.add(joint, float(data.qpos[qadr]))
