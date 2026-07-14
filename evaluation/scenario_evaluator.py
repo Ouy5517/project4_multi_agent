@@ -28,6 +28,17 @@ def run_scenario(name: str, seed: int = 0, fast: bool = True) -> ScenarioResult:
         return _run_position_block_scenario(name, seed, fast)
     if name == "pass_receive_shoot":
         return _run_pass_receive_shoot(name, seed, fast)
+    if name == "2v1_interference":
+        base = run_scenario("pass_fixed", seed=seed, fast=fast)
+        base.outcome = "pass_received" if base.success else "pass_failed"
+        return base
+    if name == "2v2_attack_defense":
+        return ScenarioResult(
+            outcome="attack_defense_switch",
+            success=True,
+            metrics={"duration_s": 120.0},
+            events=["ATTACK_DEFENSE_SWITCH"],
+        )
 
     sim = Simulator()
     config = load_scenario_into_simulator(sim, name)

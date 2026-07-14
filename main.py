@@ -127,6 +127,7 @@ def parse_args():
         "default",
         "pass", "shoot", "threat",
         "pass_fixed", "dribble_open", "position_block", "pass_receive_shoot",
+        "2v1_interference", "2v2_attack_defense",
     ]
     parser.add_argument(
         '--scenario', default='default',
@@ -196,7 +197,7 @@ def main():
         print(f"  运行产物: {out_dir}")
         sys.exit(0 if (not args.strict or summary["success_rate"] >= 0.80) else 2)
 
-    if args.strict and args.scenario in {"pass_fixed", "dribble_open", "position_block", "pass_receive_shoot"}:
+    if args.strict and args.scenario in {"pass_fixed", "dribble_open", "position_block", "pass_receive_shoot", "2v1_interference", "2v2_attack_defense"}:
         result = run_scenario(args.scenario, seed=1001, fast=args.fast)
         run_id = time.strftime("%Y%m%d-%H%M%S") + f"-{args.scenario}"
         out_dir = Path(args.log_dir) / run_id

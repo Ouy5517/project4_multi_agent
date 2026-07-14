@@ -1,0 +1,15 @@
+{
+  "name": "2v2_attack_defense",
+  "duration_s": 120.0,
+  "seed": 4000,
+  "ball": {"x": -1.0, "y": 0.0, "vx": 0.0, "vy": 0.0},
+  "blue": [
+    {"id": 0, "x": -1.2, "y": 0.0, "theta": 0.0},
+    {"id": 1, "x": -2.0, "y": 1.0, "theta": 0.0}
+  ],
+  "yellow": [
+    {"id": 10, "x": 0.8, "y": 0.0, "theta": 3.141592653589793},
+    {"id": 11, "x": 2.0, "y": -1.0, "theta": 3.141592653589793}
+  ],
+  "expect": {"outcome": "attack_defense_switch"}
+}
