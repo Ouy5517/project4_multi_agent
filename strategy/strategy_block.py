@@ -15,7 +15,8 @@ from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, ROBOT_RADIUS,
     GOAL_WIDTH, ROBOT_MAX_SPEED
 )
-from common.world_state import WorldState, Robot, Ball
+from common.world_state import WorldState, Robot, Ball, RobotRole
+from strategy.booster_skills import goal_line_block_position
 
 
 class BlockStrategy:
@@ -32,31 +33,12 @@ class BlockStrategy:
     # ================================================================
 
     def calculate_defensive_position(self, robot_id: int) -> Tuple[float, float]:
-        """
-        计算防守站位:
-        站在 '球 — 己方球门' 连线上, 保护球门方向。
-        """
-        ball = self._ws.ball
-        goal_center = self._ws.our_goal.center
-
-        # 球到己方球门的向量
-        dx = ball.x - goal_center[0]
-        dy = ball.y - goal_center[1]
-        dist_to_goal = math.sqrt(dx**2 + dy**2)
-
-        if dist_to_goal < 0.1:
-            return (goal_center[0] + 0.5, goal_center[1])
-
-        # 在球和目标之间, 离球更近
-        ratio = 0.4  # 40% 从目标向球
-        target_x = goal_center[0] + dx * ratio
-        target_y = goal_center[1] + dy * ratio
-
-        # 裁剪
-        target_x = max(-FIELD_WIDTH/2, min(FIELD_WIDTH/2, target_x))
-        target_y = max(-FIELD_HEIGHT/2, min(FIELD_HEIGHT/2, target_y))
-
-        return (target_x, target_y)
+        """Booster 门线卡位; GOALKEEPER 用门将站位。"""
+        robot = self._ws.get_robot_by_id(robot_id)
+        as_gk = robot is not None and robot.role == RobotRole.GOALKEEPER
+        if not self._ws.teammates:
+            as_gk = True
+        return goal_line_block_position(self._ws, as_goalkeeper=as_gk)
 
     # ================================================================
     # 对手封锁

@@ -14,6 +14,7 @@ from common.config import (
     ROBOT_RADIUS
 )
 from common.world_state import WorldState, Robot
+from strategy.booster_skills import assist_support_position
 
 
 class PositionStrategy:
@@ -31,32 +32,11 @@ class PositionStrategy:
 
     def calculate_support_position(self, ball_carrier_id: int,
                                     robot_id: int) -> Tuple[float, float]:
-        """
-        计算支援接应位置。
-        策略：在持球者侧后方约45度位置，形成三角进攻阵型 (朝攻击球门方向)。
-        """
+        """Booster Assist 支援站位; 无持球者时回退默认。"""
         carrier = self._ws.get_robot_by_id(ball_carrier_id)
         if carrier is None:
             return self.calculate_default_position(robot_id)
-
-        attack_x = self._ws.opponent_goal.x
-        attack_sign = 1.0 if attack_x >= 0 else -1.0
-
-        # 落在进攻方向的侧后方
-        if robot_id % 2 == 0:
-            offset_x = -0.5 * attack_sign
-            offset_y = SUPPORT_DISTANCE
-        else:
-            offset_x = -0.5 * attack_sign
-            offset_y = -SUPPORT_DISTANCE
-
-        target_x = carrier.x + offset_x
-        target_y = carrier.y + offset_y
-
-        target_x = max(-FIELD_WIDTH/2, min(FIELD_WIDTH/2, target_x))
-        target_y = max(-FIELD_HEIGHT/2, min(FIELD_HEIGHT/2, target_y))
-
-        return (target_x, target_y)
+        return assist_support_position(self._ws, robot_id, secondary=(robot_id % 2 == 1))
 
     # ================================================================
     # 空当位置

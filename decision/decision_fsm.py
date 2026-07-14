@@ -16,7 +16,8 @@ import math
 
 from common.config import (
     DT, REEVALUATE_INTERVAL, STATE_MIN_DURATION,
-    ROBOT_KICK_RANGE, SHOOT_RANGE, TEAM_BLUE
+    ROBOT_KICK_RANGE, SHOOT_RANGE, TEAM_BLUE,
+    CARRIER_STICKY_COST, CROWD_NEAR_RADIUS, CROWD_FORCE_KICK_COUNT,
 )
 from common.world_state import (
     WorldState, Robot, Ball, Team, RobotRole
@@ -27,6 +28,16 @@ from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
 from strategy.strategy_position import PositionStrategy
 from strategy.strategy_block import BlockStrategy
+from strategy.booster_skills import (
+    adjust_behind_ball,
+    calc_kick_dir,
+    count_crowd_near_ball,
+    is_angle_good,
+    keep_clear_of_ball,
+    press_flank_position,
+    rank_by_ball_cost,
+    should_enter_kick,
+)
 
 
 # ================================================================
@@ -119,6 +130,7 @@ class DecisionFSM:
         num_robots: int = 3,
         robot_ids: Optional[List[int]] = None,
         team: Team = Team.BLUE,
+        goalkeeper_id: Optional[int] = None,
     ):
         self._ws = world_state
         self._action = action
@@ -128,6 +140,12 @@ class DecisionFSM:
         else:
             self._robot_ids = list(range(num_robots))
         self._num_robots = len(self._robot_ids)
+
+        # 固定门将: 默认名单最后一人
+        if goalkeeper_id is not None:
+            self.goalkeeper_id = goalkeeper_id
+        else:
+            self.goalkeeper_id = self._robot_ids[-1] if self._robot_ids else None
 
         # 策略模块
         self.pass_strategy = PassStrategy(world_state)
@@ -203,50 +221,72 @@ class DecisionFSM:
     # ================================================================
 
     def _assign_roles(self) -> Dict[int, RobotRole]:
-        """
-        根据球的位置分配角色。
-        - 距球最近 → BALL_CARRIER
-        - 距球第二近 → SUPPORTER
-        - 其余 → DEFENDER
-        """
+        """固定 GOALKEEPER + cost 竞选 lead/assist; 其余 DEFENDER。"""
         if not self._ws.teammates:
             return {}
 
-        # 计算每个队友到球的距离
-        dists = []
-        for r in self._ws.teammates:
-            d = math.sqrt(
-                (r.x - self._ws.ball.x)**2 + (r.y - self._ws.ball.y)**2)
-            dists.append((r.id, d))
+        roles: Dict[int, RobotRole] = {}
+        gk = self.goalkeeper_id
+        if gk is not None and any(r.id == gk for r in self._ws.teammates):
+            roles[gk] = RobotRole.GOALKEEPER
+            robot = self._ws.get_robot_by_id(gk)
+            if robot:
+                robot.role = RobotRole.GOALKEEPER
 
-        dists.sort(key=lambda x: x[1])
+        field = [r for r in self._ws.teammates if r.id != gk]
+        field_ws = WorldState(
+            ball=self._ws.ball,
+            teammates=field,
+            opponents=list(self._ws.opponents),
+            our_goal=self._ws.our_goal,
+            opponent_goal=self._ws.opponent_goal,
+            field_width=self._ws.field_width,
+            field_height=self._ws.field_height,
+            timestamp=self._ws.timestamp,
+        )
+        ranked = rank_by_ball_cost(field_ws) if field else []
+        # 持球粘滞: 避免两前锋轮流冲球挤成一团
+        if self._ball_carrier_id is not None and ranked:
+            costs = {rid: c for rid, c in ranked}
+            if self._ball_carrier_id in costs:
+                best_cost = ranked[0][1]
+                if costs[self._ball_carrier_id] <= best_cost + CARRIER_STICKY_COST:
+                    sticky = self._ball_carrier_id
+                    ranked = [(sticky, costs[sticky])] + [
+                        (rid, c) for rid, c in ranked if rid != sticky
+                    ]
 
-        roles = {}
-        if len(dists) >= 1:
-            roles[dists[0][0]] = RobotRole.BALL_CARRIER
-            self._ball_carrier_id = dists[0][0]
+        self._ball_carrier_id = None
+        self._supporter_id = None
 
-            # 更新机器人角色
-            robot = self._ws.get_robot_by_id(dists[0][0])
+        if len(ranked) >= 1:
+            roles[ranked[0][0]] = RobotRole.BALL_CARRIER
+            self._ball_carrier_id = ranked[0][0]
+            robot = self._ws.get_robot_by_id(ranked[0][0])
             if robot:
                 robot.role = RobotRole.BALL_CARRIER
 
-        if len(dists) >= 2:
-            roles[dists[1][0]] = RobotRole.SUPPORTER
-            self._supporter_id = dists[1][0]
-
-            robot = self._ws.get_robot_by_id(dists[1][0])
+        if len(ranked) >= 2:
+            roles[ranked[1][0]] = RobotRole.SUPPORTER
+            self._supporter_id = ranked[1][0]
+            robot = self._ws.get_robot_by_id(ranked[1][0])
             if robot:
                 robot.role = RobotRole.SUPPORTER
 
-        for i in range(2, len(dists)):
-            roles[dists[i][0]] = RobotRole.DEFENDER
-
-            robot = self._ws.get_robot_by_id(dists[i][0])
+        for i in range(2, len(ranked)):
+            roles[ranked[i][0]] = RobotRole.DEFENDER
+            robot = self._ws.get_robot_by_id(ranked[i][0])
             if robot:
                 robot.role = RobotRole.DEFENDER
 
         return roles
+
+    def _move_cleared(self, robot_id: int, role: RobotRole, tx: float, ty: float):
+        """非持球人强制远离球, 防挤堆。"""
+        if role != RobotRole.BALL_CARRIER:
+            ball = self._ws.ball
+            tx, ty = keep_clear_of_ball(tx, ty, ball.x, ball.y)
+        self._action.move_to(robot_id, tx, ty)
 
     # ================================================================
     # 单机器人决策
@@ -276,30 +316,36 @@ class DecisionFSM:
     # ---- IDLE ----
 
     def _handle_idle(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
-        if role == RobotRole.BALL_CARRIER:
+        if role == RobotRole.GOALKEEPER:
+            fsm.transition(DecisionState.BLOCK, "goalkeeper on line")
+        elif role == RobotRole.BALL_CARRIER:
             fsm.transition(DecisionState.CHASE, "assigned BALL_CARRIER")
         elif role == RobotRole.SUPPORTER:
             if not self._ws.team_has_possession():
-                # 丢球时支援前压逼抢
-                ball = self._ws.ball
-                self._action.move_to(robot_id, ball.x, ball.y)
-                fsm.transition(DecisionState.CHASE, "press when team lost ball")
+                target = press_flank_position(self._ws, robot_id)
+                self._move_cleared(robot_id, role, *target)
+                fsm.transition(DecisionState.CHASE, "press flank when contested")
             else:
                 target = self.position_strategy.calculate_support_position(
                     self._ball_carrier_id or robot_id, robot_id)
-                self._action.move_to(robot_id, *target)
+                self._move_cleared(robot_id, role, *target)
         elif role == RobotRole.DEFENDER:
             fsm.transition(DecisionState.BLOCK, "hold defensive line")
 
     # ---- CHASE: 追球 ----
 
     def _handle_chase(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
-        # 角色变化
-        if role == RobotRole.DEFENDER:
-            fsm.transition(DecisionState.BLOCK, "role changed to DEFENDER")
+        if role == RobotRole.GOALKEEPER or role == RobotRole.DEFENDER:
+            fsm.transition(DecisionState.BLOCK, "back to defensive line")
             return
         if role == RobotRole.SUPPORTER:
-            fsm.transition(DecisionState.IDLE, "role changed to SUPPORTER")
+            # 支援永不踩球: 争球站侧翼, 有球权站接应
+            if not self._ws.team_has_possession():
+                target = press_flank_position(self._ws, robot_id)
+            else:
+                target = self.position_strategy.calculate_support_position(
+                    self._ball_carrier_id or robot_id, robot_id)
+            self._move_cleared(robot_id, role, *target)
             return
 
         ball = self._ws.ball
@@ -307,17 +353,33 @@ class DecisionFSM:
         if robot is None:
             return
 
-        # 检查是否已到达球
-        if self.dribble_strategy.is_ball_controlled(robot_id):
-            # 评估下一步
-            if fsm.can_reevaluate():
+        kick_dir, _mode = calc_kick_dir(self._ws)
+        dist = self._ws.distance(robot, ball)
+        crowd = count_crowd_near_ball(
+            self._ws, CROWD_NEAR_RADIUS, exclude_id=robot_id
+        )
+        # 挤死时优先解围, 不等完美角度
+        if dist <= ROBOT_KICK_RANGE * 1.35 and crowd >= CROWD_FORCE_KICK_COUNT:
+            self._action.turn_to(robot_id, kick_dir)
+            self._action.kick(robot_id, 80.0, kick_dir)
+            fsm.transition(DecisionState.DRIBBLE, "crowd clear kick")
+            return
+
+        if self.dribble_strategy.is_ball_controlled(robot_id) or should_enter_kick(
+            robot, ball.x, ball.y, kick_dir
+        ):
+            if fsm.can_reevaluate() or self.dribble_strategy.is_ball_controlled(robot_id):
                 self._evaluate_next_action(robot_id, fsm)
+            else:
+                tx, ty = adjust_behind_ball(ball.x, ball.y, kick_dir)
+                self._action.move_to(robot_id, tx, ty)
+                self._action.turn_to(robot_id, kick_dir)
         else:
-            # 追球 (略预瞄球速, 争球更主动)
-            _, tx, ty = self.dribble_strategy.approach_ball(robot_id)
-            tx += ball.vx * 0.22
-            ty += ball.vy * 0.22
+            _arrived, tx, ty = self.dribble_strategy.approach_ball(robot_id, kick_dir)
+            tx += ball.vx * 0.18
+            ty += ball.vy * 0.18
             self._action.move_to(robot_id, tx, ty)
+            self._action.turn_to(robot_id, math.atan2(ty - robot.y, tx - robot.x))
 
     # ---- DRIBBLE: 带球 ----
 
@@ -326,31 +388,32 @@ class DecisionFSM:
             fsm.transition(DecisionState.IDLE, "lost ball carrier role")
             return
 
-        # 检查是否丢失球
         if not self.dribble_strategy.is_ball_controlled(robot_id):
             fsm.transition(DecisionState.CHASE, "lost ball")
             return
 
-        # 带球朝对方球门
+        kick_dir, kick_mode = calc_kick_dir(self._ws)
         goal = self._ws.opponent_goal
-        target_x = goal.x
-        target_y = goal.center[1]
+        if kick_mode == "cross":
+            target_x = goal.x - math.copysign(1.5, goal.x)
+            target_y = 0.0
+        else:
+            target_x = goal.x
+            target_y = goal.center[1]
 
         should_dribble, direction, power, dist = \
             self.dribble_strategy.dribble_toward(robot_id, target_x, target_y)
+        direction = kick_dir
 
         if should_dribble:
-            # 在球的后面, 向目标踢球
             robot = self._ws.get_robot_by_id(robot_id)
             if robot:
                 self._action.turn_to(robot_id, direction)
                 self._action.kick(robot_id, power, direction)
-            # 移动机器人在球后
             behind_x, behind_y = self.dribble_strategy._position_behind_ball(
                 robot_id, direction)
             self._action.move_to(robot_id, behind_x, behind_y)
 
-        # 重新评估
         if fsm.can_reevaluate():
             self._evaluate_next_action(robot_id, fsm)
 
@@ -384,20 +447,55 @@ class DecisionFSM:
     # ---- SHOOT: 射门 ----
 
     def _handle_shoot(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
+        robot = self._ws.get_robot_by_id(robot_id)
+        ball = self._ws.ball
         evaluation = self.shoot_strategy.evaluate_shoot_opportunity(robot_id)
-
-        if evaluation.is_viable:
+        angle_ok = (
+            robot is not None
+            and is_angle_good(robot, ball.x, ball.y, self._ws.opponent_goal)
+        )
+        crowd = count_crowd_near_ball(
+            self._ws, CROWD_NEAR_RADIUS, exclude_id=robot_id
+        )
+        if evaluation.is_viable and (angle_ok or crowd >= CROWD_FORCE_KICK_COUNT):
             self._action.turn_to(robot_id, evaluation.best_angle)
             self._action.kick(robot_id, evaluation.power, evaluation.best_angle)
+        elif robot is not None and not angle_ok:
+            kick_dir, _ = calc_kick_dir(self._ws)
+            tx, ty = adjust_behind_ball(ball.x, ball.y, kick_dir)
+            self._action.move_to(robot_id, tx, ty)
+            self._action.turn_to(robot_id, kick_dir)
 
-        # 射门后等待, 重新评估
         if fsm.state_timer > 2.0:
             fsm.transition(DecisionState.CHASE, "shoot completed")
 
     # ---- BLOCK: 防守 ----
 
     def _handle_block(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
-        # 如果重新分配为持球者 → 上前争球
+        from common.config import GOALIE_CHASE_RANGE
+        from strategy.booster_skills import goal_line_block_position
+
+        if role == RobotRole.GOALKEEPER:
+            ball = self._ws.ball
+            robot = self._ws.get_robot_by_id(robot_id)
+            our_gx = self._ws.our_goal.x
+            in_own_half = abs(ball.x - our_gx) < abs(ball.x - self._ws.opponent_goal.x)
+            if robot is not None and in_own_half:
+                dist = self._ws.distance(robot, ball)
+                if dist <= GOALIE_CHASE_RANGE and dist <= ROBOT_KICK_RANGE * 1.3:
+                    kick_dir, _ = calc_kick_dir(self._ws, defending_clear=True)
+                    self._action.turn_to(robot_id, kick_dir)
+                    self._action.kick(robot_id, 75.0, kick_dir)
+                elif dist <= GOALIE_CHASE_RANGE:
+                    # 门将逼近也避免踩进人群中心: 球后小偏移
+                    kick_dir, _ = calc_kick_dir(self._ws, defending_clear=True)
+                    tx, ty = adjust_behind_ball(ball.x, ball.y, kick_dir)
+                    self._action.move_to(robot_id, tx, ty)
+                    return
+            target = goal_line_block_position(self._ws, as_goalkeeper=True)
+            self._move_cleared(robot_id, role, *target)
+            return
+
         if role == RobotRole.BALL_CARRIER:
             fsm.transition(DecisionState.CHASE, "now ball carrier")
             return
@@ -405,39 +503,43 @@ class DecisionFSM:
             fsm.transition(DecisionState.IDLE, "support after regain")
             return
 
-        # 防守者始终卡在 球—己方球门 连线上; 受威胁时更贴球
-        if self.block_strategy.is_goal_threatened():
-            target = self.block_strategy.calculate_defensive_position(robot_id)
-            # 略前移压迫
-            ball = self._ws.ball
-            gx, gy = self._ws.our_goal.center
-            tx = 0.55 * target[0] + 0.45 * ball.x
-            ty = 0.55 * target[1] + 0.45 * ball.y
-            self._action.move_to(robot_id, tx, ty)
-        else:
-            target = self.block_strategy.calculate_defensive_position(robot_id)
-            self._action.move_to(robot_id, *target)
+        # 卡位站线, 不再 45% 混向球 (那是挤堆主因之一)
+        target = self.block_strategy.calculate_defensive_position(robot_id)
+        self._move_cleared(robot_id, role, *target)
 
     # ---- 评估下一步动作 ----
 
     def _evaluate_next_action(self, robot_id: int, fsm: RobotFSM):
-        """
-        在控制球后评估最佳动作: SHOOT > PASS > DRIBBLE
-        争球不利时优先带球摆脱或回传。
-        """
+        """SHOOT (需射击窗) > PASS > DRIBBLE/cross。"""
+        kick_dir, kick_mode = calc_kick_dir(self._ws)
+        robot = self._ws.get_robot_by_id(robot_id)
+        ball = self._ws.ball
+
         shoot_eval = self.shoot_strategy.evaluate_shoot_opportunity(robot_id)
-        if shoot_eval.is_viable and shoot_eval.score > 0.45:
-            fsm.transition(DecisionState.SHOOT, f"shoot opportunity (score={shoot_eval.score:.2f})")
+        angle_ok = (
+            robot is not None
+            and is_angle_good(robot, ball.x, ball.y, self._ws.opponent_goal)
+        )
+        if (
+            kick_mode == "shoot"
+            and shoot_eval.is_viable
+            and shoot_eval.score > 0.40
+            and angle_ok
+        ):
+            fsm.transition(
+                DecisionState.SHOOT,
+                f"shoot opportunity (score={shoot_eval.score:.2f})",
+            )
             return
 
         pass_options = self.pass_strategy.evaluate_pass_options(robot_id)
-        # 对方逼抢近时更倾向传球
         press_pass_boost = 0.0
         opp = self._ws.closest_opponent_to_ball()
-        robot = self._ws.get_robot_by_id(robot_id)
         if opp is not None and robot is not None:
             if self._ws.distance(robot, opp) < 1.2:
                 press_pass_boost = 0.15
+        if kick_mode == "cross":
+            press_pass_boost += 0.12
         pass_threshold = 0.35 - press_pass_boost
         if pass_options and pass_options[0].score > pass_threshold:
             fsm.transition(
@@ -447,7 +549,7 @@ class DecisionFSM:
             fsm.pass_target_id = pass_options[0].receiver_id
             return
 
-        fsm.transition(DecisionState.DRIBBLE, "advance toward goal")
+        fsm.transition(DecisionState.DRIBBLE, f"advance ({kick_mode})")
 
     # ================================================================
     # 日志

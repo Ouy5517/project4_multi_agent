@@ -215,26 +215,42 @@ def main():
     # 决策引擎 (两种模式共用)
     # ================================================================
     world_state = world_provider.get()
-    blue_fsm = DecisionFSM(
-        world_state, robot_action, num_robots=NUM_ROBOTS_PER_TEAM, team=Team.BLUE,
-    )
+    blue_gk_id = NUM_ROBOTS_PER_TEAM - 1
     yellow_ids = [10 + i for i in range(NUM_ROBOTS_PER_TEAM)]
+    yellow_gk_id = yellow_ids[-1]
+    blue_fsm = DecisionFSM(
+        world_state,
+        robot_action,
+        num_robots=NUM_ROBOTS_PER_TEAM,
+        team=Team.BLUE,
+        goalkeeper_id=blue_gk_id,
+    )
     yellow_fsm = DecisionFSM(
         world_state.perspective_for(Team.YELLOW),
         robot_action,
         robot_ids=yellow_ids,
         team=Team.YELLOW,
+        goalkeeper_id=yellow_gk_id,
     )
     # 兼容旧代码/可视化仍用 fsm 指蓝队
     fsm = blue_fsm
-    match = MatchController()
+    match = MatchController(
+        blue_gk_id=blue_gk_id,
+        yellow_gk_id=yellow_gk_id,
+        blue_ids=list(range(NUM_ROBOTS_PER_TEAM)),
+        yellow_ids=list(yellow_ids),
+    )
+    if args.mode == 'mock' and simulator is not None:
+        match.begin_kickoff(simulator, blue_fsm, yellow_fsm, kicking_team=Team.BLUE)
 
     # 可视化
     visualizer = None
     viz_mode = 'none' if args.headless else (args.viz or 'ascii')
 
     print(f"  双队 FSM:  蓝攻右门 / 黄攻左门 (争球对抗)")
-    print(f"  规则:      防重叠 / 越位裁剪 / 禁对方门底抢球 / 进球计分换回合")
+    print(f"  门将:      蓝#{blue_gk_id} / 黄#{yellow_gk_id}")
+    print(f"  规则:      防重叠 / 越位 / 门底禁抢 / 进球开球 / 出界任意球")
+    print(f"  算法:      Booster kickDir / circle-back / 门线 / Assist / cost / isAngleGood")
 
     if viz_mode == 'ascii':
         visualizer = ASCIIVisualizer()
@@ -290,10 +306,13 @@ def main():
 
         match.update_cooldown(DT)
 
+        if simulator is not None:
+            match.tick_set_piece(simulator)
+
         # 2. 获取世界状态
         world_state = world_provider.get()
 
-        # 3. 双队决策 (开球冷却中暂停下指令, 避免立刻冲球)
+        # 3. 双队决策 (定点球保持期内暂停)
         if not match.frozen:
             blue_view = world_state
             yellow_view = world_state.perspective_for(Team.YELLOW)
@@ -311,7 +330,7 @@ def main():
             else:
                 visualizer.render(world_state, blue_fsm)
 
-        # 5. 进球检测 → 计分 → 开球进入下一回合
+        # 5. 进球 / 出界
         if simulator is not None:
             scorer = match.detect_goal(simulator.ball.x, simulator.ball.y)
             if scorer is not None:
@@ -319,6 +338,21 @@ def main():
                     scorer, simulator, blue_fsm, yellow_fsm,
                     timestamp=world_state.timestamp,
                 )
+            else:
+                out_kind = match.detect_out_of_play(
+                    simulator.ball.x, simulator.ball.y,
+                )
+                if out_kind is not None:
+                    bx, by = simulator.ball.x, simulator.ball.y
+                    if out_kind == "goalline":
+                        attacking = Team.BLUE if bx < 0 else Team.YELLOW
+                    else:
+                        attacking = Team.BLUE if bx > 0 else Team.YELLOW
+                    match.begin_freekick(
+                        simulator, blue_fsm, yellow_fsm,
+                        attacking_team=attacking,
+                        ball_x=bx, ball_y=by,
+                    )
 
         # 维持帧率
         elapsed = time.time() - loop_start

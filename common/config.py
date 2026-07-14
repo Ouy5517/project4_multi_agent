@@ -48,6 +48,27 @@ BLOCK_DISTANCE = 0.5          # 卡位防守距离 (米)
 SUPPORT_DISTANCE = 1.5        # 支援接应距离 (米)
 OPPONENT_THREAT_RANGE = 2.0   # 对手威胁判定范围 (米)
 POSSESSION_CONTESTED_RANGE = 0.3  # 争球判定距离差 (米)
+# --- Booster robocup 几何技能阈值 (kid 9×6) ---
+CHASE_THRESHOLD = 1.0
+CHASE_SAFE_DIST = 0.45
+CHASE_BEHIND_DIST = 0.12
+ADJUST_RANGE = 0.40
+GOAL_LINE_DIST = 1.8
+ASSIST_BACK_PRIMARY = 1.6
+ASSIST_BACK_SECONDARY = 2.8
+CROSS_ANGLE_THRESHOLD = 0.25
+KICK_ALIGN_TOLERANCE = 0.35
+ANGLE_GOOD_MARGIN = 0.30
+GOALIE_CHASE_RANGE = 2.4
+SET_PIECE_HOLD = 2.0
+KICKOFF_BALL_MOVE_THRESH = 0.35
+# --- 防挤堆 ---
+BALL_KEEP_CLEAR = 1.15        # 非持球人目标点距球最小距离
+PRESS_FLANK_SIDE = 1.25       # 逼抢侧向偏移
+PRESS_FLANK_BACK = 0.85       # 逼抢相对球的退后距离
+CARRIER_STICKY_COST = 0.55    # 持球角色粘滞: cost 差小于此则不换人
+CROWD_NEAR_RADIUS = 0.75      # 球附近邻居半径
+CROWD_FORCE_KICK_COUNT = 2    # 邻居≥此数时强制解围踢
 
 # ============================================================
 # 仿真参数

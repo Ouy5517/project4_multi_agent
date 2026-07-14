@@ -28,9 +28,10 @@ class Team(Enum):
 
 class RobotRole(Enum):
     """机器人角色"""
-    BALL_CARRIER = "ball_carrier"   # 持球者
-    SUPPORTER = "supporter"          # 支援者
-    DEFENDER = "defender"            # 防守者
+    BALL_CARRIER = "ball_carrier"   # 持球者 / lead
+    SUPPORTER = "supporter"          # 支援者 / assist
+    DEFENDER = "defender"            # 场上防守者
+    GOALKEEPER = "goalkeeper"        # 固定门将
     IDLE = "idle"                    # 空闲
 
 
