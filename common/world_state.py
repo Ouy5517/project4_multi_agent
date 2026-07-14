@@ -357,6 +357,29 @@ def create_shoot_scenario() -> WorldState:
     )
 
 
+def create_shoot_angle_scenario(
+    ball_x: float = 3.0,
+    ball_y: float = 0.0,
+    behind: float = 0.22,
+) -> WorldState:
+    """
+    单人多角度射门实验场景:
+    仅 1 个蓝队球员 + 球 + 右侧球门, 无队友/对手。
+    """
+    kick_dir = math.atan2(0.0 - ball_y, GOAL_X - ball_x)
+    rx = ball_x - math.cos(kick_dir) * behind
+    ry = ball_y - math.sin(kick_dir) * behind
+    return WorldState(
+        ball=Ball(x=ball_x, y=ball_y),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=rx, y=ry, theta=kick_dir, role=RobotRole.BALL_CARRIER),
+        ],
+        opponents=[],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
 def create_threat_scenario() -> WorldState:
     """防守威胁场景: 对手持球接近己方球门"""
     return WorldState(
@@ -381,5 +404,6 @@ SCENARIOS = {
     "default": create_default_world_state,
     "pass": create_pass_scenario,
     "shoot": create_shoot_scenario,
+    "shoot_angle": create_shoot_angle_scenario,
     "threat": create_threat_scenario,
 }

@@ -129,6 +129,12 @@ class MuJoCoSimulator(Simulator):
         self._limb_follow_qpos: Dict[int, Dict[str, int]] = {}
         self._init_robot_mappings()
 
+        # 场景 XML 中的全部 robot_* (即使 num_blue/yellow 更少也会存在)
+        self._scene_robot_mocap: Dict[int, int] = {}
+        self._scene_robot_geom_alphas: Dict[int, List[Tuple[int, float]]] = {}
+        self._visible_robot_ids: Optional[set] = None
+        self._discover_scene_robots()
+
         # 初始化传球线 mocap ID 和 geom ID
         self._init_pass_lines()
 
@@ -137,6 +143,60 @@ class MuJoCoSimulator(Simulator):
     # ================================================================
     # 初始化
     # ================================================================
+
+    def _discover_scene_robots(self):
+        """扫描 XML 里所有 robot_<id> mocap, 供 hide 多余机器人。"""
+        import re
+        for body_id in range(self.model.nbody):
+            name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_BODY, body_id)
+            if not name:
+                continue
+            m = re.fullmatch(r"robot_(\d+)", name)
+            if not m:
+                continue
+            rid = int(m.group(1))
+            mocap_id = int(self.model.body_mocapid[body_id])
+            if mocap_id < 0:
+                continue
+            self._scene_robot_mocap[rid] = mocap_id
+            alphas: List[Tuple[int, float]] = []
+            prefix = f"robot_{rid}"
+            for gid in range(self.model.ngeom):
+                gname = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, gid)
+                if gname and (gname == prefix or gname.startswith(prefix + "_")):
+                    alphas.append((gid, float(self.model.geom_rgba[gid][3])))
+            self._scene_robot_geom_alphas[rid] = alphas
+
+    def set_visible_robots(self, robot_ids) -> None:
+        """
+        射门等精简场景: 只显示给定 id 的 T1, 其余埋地并透明。
+        仅影响 MuJoCo 渲染, 不改 2D 逻辑机器人集合。
+        """
+        self._visible_robot_ids = set(robot_ids)
+        self._apply_robot_visibility()
+        self.hide_pass_lines()
+
+    def hide_pass_lines(self) -> None:
+        for geom_id in self._pass_line_geom_ids:
+            if geom_id >= 0:
+                self._set_geom_rgba(geom_id, (0.3, 1.0, 0.15, 0.0))
+        for mocap_id in self._pass_line_mocap_ids:
+            if mocap_id >= 0:
+                self.data.mocap_pos[mocap_id] = [0.0, 0.0, -2.0]
+
+    def _apply_robot_visibility(self) -> None:
+        if self._visible_robot_ids is None:
+            return
+        for rid, mocap_id in self._scene_robot_mocap.items():
+            visible = rid in self._visible_robot_ids
+            if not visible:
+                self.data.mocap_pos[mocap_id] = [0.0, 0.0, -5.0]
+                self.data.mocap_quat[mocap_id] = [1.0, 0.0, 0.0, 0.0]
+            for gid, orig_a in self._scene_robot_geom_alphas.get(rid, []):
+                rgba = list(self.model.geom_rgba[gid])
+                rgba[3] = orig_a if visible else 0.0
+                self.model.geom_rgba[gid] = rgba
+        mujoco.mj_forward(self.model, self.data)
 
     def _init_robot_mappings(self):
         """建立 robot_id → mocap_id / ring_geom_id / 肢体关节 的映射"""
@@ -321,6 +381,12 @@ class MuJoCoSimulator(Simulator):
             self.data.mocap_pos[mocap_id] = [robot.x, robot.y, self.ROBOT_Z]
             quat = _yaw_to_quat(robot.theta)
             self.data.mocap_quat[mocap_id] = list(quat)
+
+        # 射门等单人场景: 持续把隐藏机器人埋在地下
+        if self._visible_robot_ids is not None:
+            for rid, mocap_id in self._scene_robot_mocap.items():
+                if rid not in self._visible_robot_ids:
+                    self.data.mocap_pos[mocap_id] = [0.0, 0.0, -5.0]
 
         # --- 肢体关节 ---
         self._apply_limb_poses()
