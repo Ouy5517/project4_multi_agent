@@ -18,6 +18,18 @@ def test_help_exits_zero():
     assert "--scenario" in result.stdout
 
 
+def test_help_exposes_mujoco_live_viewer():
+    result = run_cli("--help")
+    assert result.returncode == 0
+    assert "--viewer {ascii,mujoco,none}" in result.stdout
+
+
+def test_help_exposes_showcase_scenario():
+    result = run_cli("--help")
+    assert result.returncode == 0
+    assert "showcase" in result.stdout
+
+
 def test_unknown_scenario_fails():
     result = run_cli("--scenario", "missing")
     assert result.returncode != 0

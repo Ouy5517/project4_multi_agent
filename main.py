@@ -40,6 +40,7 @@ from simulation.scenarios import (
     ScenarioValidationError,
     load_scenario_into_simulator,
 )
+from simulation.showcase import ShowcaseDirector
 from decision.decision_fsm import DecisionFSM
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
@@ -127,7 +128,7 @@ def parse_args():
         "default",
         "pass", "shoot", "threat",
         "pass_fixed", "dribble_open", "position_block", "pass_receive_shoot",
-        "2v1_interference", "2v2_attack_defense",
+        "2v1_interference", "2v2_attack_defense", "showcase",
     ]
     parser.add_argument(
         '--scenario', default='default',
@@ -141,6 +142,10 @@ def parse_args():
     parser.add_argument(
         '--headless', action='store_true',
         help='无渲染模式 (不输出 ASCII 可视化)'
+    )
+    parser.add_argument(
+        '--viewer', choices=['ascii', 'mujoco', 'none'], default='ascii',
+        help='可视化方式: ascii=终端, mujoco=实时2.5D窗口, none=关闭'
     )
     parser.add_argument(
         '--fast', action='store_true',
@@ -258,10 +263,13 @@ def main():
     # 初始化 (根据模式选择不同的 Provider 和 Action)
     # ================================================================
     simulator = None  # 仅 mock 模式使用
+    showcase_director = None
 
     if args.mode == 'mock':
         simulator = Simulator()
-        if args.scenario != 'default':
+        if args.scenario == "showcase":
+            showcase_director = ShowcaseDirector(simulator)
+        elif args.scenario != 'default':
             scenario_name = {
                 "pass": "pass_fixed",
                 "shoot": "dribble_open",
@@ -297,7 +305,21 @@ def main():
     fsm = DecisionFSM(world_state, robot_action, NUM_ROBOTS_PER_TEAM)
 
     # 可视化
-    visualizer = None if args.headless else ASCIIVisualizer()
+    if args.headless or args.viewer == "none":
+        visualizer = None
+    elif args.viewer == "mujoco":
+        try:
+            from visualization.mujoco_viewer import MujocoSoccerViewer
+
+            visualizer = MujocoSoccerViewer(world_state)
+        except (ImportError, RuntimeError) as exc:
+            print(f"  错误: MuJoCo 窗口启动失败: {exc}")
+            print("  请在 WSL 虚拟环境中安装 mujoco，并确认 WSLg 的 DISPLAY 可用")
+            sys.exit(3)
+    else:
+        visualizer = ASCIIVisualizer()
+    if showcase_director and hasattr(visualizer, "set_phase"):
+        visualizer.set_phase(showcase_director.phase.label)
 
     # 日志目录
     os.makedirs(args.log_dir, exist_ok=True)
@@ -318,6 +340,15 @@ def main():
     # ================================================================
     for tick in range(total_ticks):
         loop_start = time.time()
+
+        if showcase_director is not None:
+            if showcase_director.advance(simulator, DT):
+                world_state = world_provider.get()
+                fsm = DecisionFSM(world_state, robot_action, NUM_ROBOTS_PER_TEAM)
+                if visualizer and hasattr(visualizer, "set_phase"):
+                    visualizer.set_phase(showcase_director.phase.label)
+                print(f"  演示阶段切换: {showcase_director.phase.label}")
+            showcase_director.control_opponents(simulator)
 
         # 1. 更新物理仿真 (仅 Mock 模式)
         if args.mode == 'mock' and simulator is not None:
@@ -351,6 +382,9 @@ def main():
 
         # 4. 渲染
         if visualizer:
+            if hasattr(visualizer, "is_running") and not visualizer.is_running():
+                print("  可视化窗口已关闭，结束仿真")
+                break
             visualizer.render(world_state, fsm)
 
         # 5. 检查球是否进球
@@ -367,6 +401,9 @@ def main():
             print(f"  [{tick}/{total_ticks}] "
                   f"t={world_state.timestamp:.0f}s "
                   f"real_time={elapsed_total:.1f}s")
+
+    if visualizer and hasattr(visualizer, "close"):
+        visualizer.close()
 
     # ================================================================
     # 结束

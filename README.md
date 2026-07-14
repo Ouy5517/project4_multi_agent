@@ -60,6 +60,10 @@ bash run.sh 60
 # 运行测试
 bash run.sh test
 
+# 启动轻量 MuJoCo 2.5D 综合演示（传球、带球、跑位、卡位、2v2 攻防）
+source "$HOME/.venvs/robocup-p4/bin/activate"
+bash run.sh view
+
 # 安装开发依赖
 bash run.sh install
 ```

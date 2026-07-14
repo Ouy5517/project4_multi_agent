@@ -20,6 +20,9 @@ case "$cmd" in
   record)
     python main.py --scenario pass_fixed --headless --fast --strict "$@"
     ;;
+  view)
+    python main.py --scenario showcase --viewer mujoco --duration 70 "$@"
+    ;;
   *)
     python main.py "$cmd" "$@"
     ;;
