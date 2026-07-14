@@ -14,12 +14,13 @@ JOINTS = [
     ("AAHead_yaw", "-1.57 1.57", 8),
     ("Head_pitch", "-0.35 1.22", 8),
     ("Left_Shoulder_Pitch", "-1.2 1.2", 24),
-    ("Left_Shoulder_Roll", "-0.8 0.8", 16),
-    ("Left_Elbow_Pitch", "-1.0 1.0", 16),
+    # 与官方 T1 一致, 才能下垂 (零位为横伸 T 字)
+    ("Left_Shoulder_Roll", "-1.74 1.57", 16),
+    ("Left_Elbow_Pitch", "-2.27 2.27", 16),
     ("Left_Elbow_Yaw", "-1.0 1.0", 12),
     ("Right_Shoulder_Pitch", "-1.2 1.2", 24),
-    ("Right_Shoulder_Roll", "-0.8 0.8", 16),
-    ("Right_Elbow_Pitch", "-1.0 1.0", 16),
+    ("Right_Shoulder_Roll", "-1.57 1.74", 16),
+    ("Right_Elbow_Pitch", "-2.27 2.27", 16),
     ("Right_Elbow_Yaw", "-1.0 1.0", 12),
     ("Waist", "-0.6 0.6", 20),
     ("Left_Hip_Pitch", "-0.9 0.9", 40),
@@ -149,11 +150,11 @@ def robot_xml(name: str, cfg: dict[str, object], visual_v2: bool = False) -> str
           <joint name="{prefix}_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="{name}_left_upper_arm" pos="0 0.03 -0.08">
-            <joint name="{prefix}_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="{prefix}_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
             <geom name="{name}_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="{rgba}" contype="0" conaffinity="0"{base_group}/>
             <geom name="{name}_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2"/>
             <body name="{name}_left_lower_arm" pos="0 0 -0.16">
-              <joint name="{prefix}_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="{prefix}_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="{prefix}_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="{name}_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="{dark}" contype="0" conaffinity="0"{base_group}/>
               <geom name="{name}_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="{dark}" contype="0" conaffinity="0" group="2"/>
@@ -164,11 +165,11 @@ def robot_xml(name: str, cfg: dict[str, object], visual_v2: bool = False) -> str
           <joint name="{prefix}_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="{name}_right_upper_arm" pos="0 -0.03 -0.08">
-            <joint name="{prefix}_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="{prefix}_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
             <geom name="{name}_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="{rgba}" contype="0" conaffinity="0"{base_group}/>
             <geom name="{name}_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2"/>
             <body name="{name}_right_lower_arm" pos="0 0 -0.16">
-              <joint name="{prefix}_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="{prefix}_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="{prefix}_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="{name}_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="{dark}" contype="0" conaffinity="0"{base_group}/>
               <geom name="{name}_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="{dark}" contype="0" conaffinity="0" group="2"/>

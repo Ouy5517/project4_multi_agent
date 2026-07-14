@@ -1,4 +1,6 @@
-"""肢体动画器单测 — kick / dribble / turn / brake"""
+"""肢体动画器单测 — kick / dribble / turn / brake / arm swing"""
+import math
+
 from simulation.limb_animator import (
     LimbAnimator,
     KICK_CONTACT_RATIO,
@@ -49,10 +51,37 @@ def test_turn_pose_asymmetric():
     assert left.l_knee > left.r_knee
 
 
-def test_brake_pose_knees_bent():
-    pose = _brake_pose()
-    assert pose.r_knee > 0.4
-    assert pose.l_knee > 0.4
+def test_walk_pose_has_contralateral_arm_swing():
+    from simulation.limb_animator import _walk_pose
+    pose = _walk_pose(math.pi / 2, amp=0.42)
+    assert pose.l_shoulder > 0.3
+    assert pose.r_shoulder < -0.3
+    assert pose.r_hip * pose.r_shoulder < 0
+    assert pose.l_elbow < -0.4
+    assert pose.r_elbow < -0.4
+    # 下垂: 左负右正
+    assert pose.l_shoulder_roll < -1.0
+    assert pose.r_shoulder_roll > 1.0
+
+
+def test_kick_pose_arms_counterbalance():
+    pose = _kick_pose(0.48)
+    assert abs(pose.l_shoulder) > 0.3 or abs(pose.r_shoulder) > 0.3
+    assert pose.l_elbow < -0.4
+    assert pose.r_elbow < -0.4
+    assert pose.l_shoulder_roll < -1.0
+    assert pose.r_shoulder_roll > 1.0
+
+
+def test_animator_moving_swings_arms():
+    anim = LimbAnimator()
+    dt = 1.0 / 30.0
+    peak = 0.0
+    for _ in range(40):
+        anim.step(dt, moving_ids={0})
+        pose = anim.get_pose(0)
+        peak = max(peak, abs(pose.l_shoulder), abs(pose.r_shoulder))
+    assert peak > 0.35
 
 
 def test_animator_fires_impulse_at_contact():

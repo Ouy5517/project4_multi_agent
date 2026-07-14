@@ -13,7 +13,7 @@ import math
 from common.config import (
     BLOCK_DISTANCE, OPPONENT_THREAT_RANGE,
     FIELD_WIDTH, FIELD_HEIGHT, ROBOT_RADIUS,
-    OUR_GOAL_X, GOAL_WIDTH, ROBOT_MAX_SPEED
+    GOAL_WIDTH, ROBOT_MAX_SPEED
 )
 from common.world_state import WorldState, Robot, Ball
 
@@ -127,22 +127,22 @@ class BlockStrategy:
         """
         检查对方是否对球门构成威胁。
         条件: 对手在己方半场控球, 且距离球门较近。
+        使用 ws.our_goal, 蓝/黄视角通用。
         """
         closest_opp = self._ws.closest_opponent_to_ball()
         if closest_opp is None:
             return False
 
-        # 球在对手控制范围内
         if self._ws.distance(closest_opp, self._ws.ball) > ROBOT_RADIUS * 2:
             return False
 
-        # 对手在己方半场
-        if closest_opp.x > 0:
+        our_gx = self._ws.our_goal.x
+        # 与己方球门同侧半场视为己方半场
+        if closest_opp.x * our_gx <= 0:
             return False
 
-        # 对手离球门较近
         dist_to_goal = math.sqrt(
-            (closest_opp.x - OUR_GOAL_X)**2 + closest_opp.y**2)
+            (closest_opp.x - our_gx)**2 + closest_opp.y**2)
         return dist_to_goal < OPPONENT_THREAT_RANGE
 
     def get_threat_level(self) -> float:
@@ -156,9 +156,9 @@ class BlockStrategy:
         if closest_opp is None:
             return 0.0
 
+        our_gx = self._ws.our_goal.x
         dist_to_goal = math.sqrt(
-            (closest_opp.x - OUR_GOAL_X)**2 + closest_opp.y**2)
+            (closest_opp.x - our_gx)**2 + closest_opp.y**2)
 
-        # 越近威胁越大
         threat = 1.0 - min(dist_to_goal / OPPONENT_THREAT_RANGE, 1.0)
         return threat

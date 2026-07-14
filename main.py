@@ -32,12 +32,13 @@ from common.config import (
     FPS, DT, MAX_TICKS, NUM_ROBOTS_PER_TEAM,
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH
 )
-from common.world_state import (
-    WorldStateProvider, SCENARIOS, WorldState, Ball, Robot, Goal, Team, RobotRole
-)
 from common.robot_action import MockRobotAction
 from simulation.field_simulator import Simulator
 from decision.decision_fsm import DecisionFSM
+from decision.match_controller import MatchController
+from common.world_state import (
+    WorldStateProvider, SCENARIOS, WorldState, Ball, Robot, Goal, Team, RobotRole
+)
 from strategy.strategy_pass import PassStrategy
 from strategy.strategy_dribble import DribbleStrategy
 from strategy.strategy_shoot import ShootStrategy
@@ -214,11 +215,26 @@ def main():
     # 决策引擎 (两种模式共用)
     # ================================================================
     world_state = world_provider.get()
-    fsm = DecisionFSM(world_state, robot_action, NUM_ROBOTS_PER_TEAM)
+    blue_fsm = DecisionFSM(
+        world_state, robot_action, num_robots=NUM_ROBOTS_PER_TEAM, team=Team.BLUE,
+    )
+    yellow_ids = [10 + i for i in range(NUM_ROBOTS_PER_TEAM)]
+    yellow_fsm = DecisionFSM(
+        world_state.perspective_for(Team.YELLOW),
+        robot_action,
+        robot_ids=yellow_ids,
+        team=Team.YELLOW,
+    )
+    # 兼容旧代码/可视化仍用 fsm 指蓝队
+    fsm = blue_fsm
+    match = MatchController()
 
     # 可视化
     visualizer = None
     viz_mode = 'none' if args.headless else (args.viz or 'ascii')
+
+    print(f"  双队 FSM:  蓝攻右门 / 黄攻左门 (争球对抗)")
+    print(f"  规则:      防重叠 / 越位裁剪 / 禁对方门底抢球 / 进球计分换回合")
 
     if viz_mode == 'ascii':
         visualizer = ASCIIVisualizer()
@@ -272,24 +288,37 @@ def main():
         if args.mode == 'mock' and simulator is not None:
             simulator.update(DT)
 
+        match.update_cooldown(DT)
+
         # 2. 获取世界状态
         world_state = world_provider.get()
 
-        # 3. 运行决策引擎
-        fsm.update(world_state, DT)
+        # 3. 双队决策 (开球冷却中暂停下指令, 避免立刻冲球)
+        if not match.frozen:
+            blue_view = world_state
+            yellow_view = world_state.perspective_for(Team.YELLOW)
+            blue_fsm.update(blue_view, DT)
+            yellow_fsm.update(yellow_view, DT)
+            _sync_roles_to_sim(simulator, blue_view)
+            _sync_roles_to_sim(simulator, yellow_view)
 
         # 4. 渲染
         if visualizer:
             if viz_mode == 'mujoco':
-                # MuJoCoVisualizer.render() 返回 False 当用户关闭窗口
-                if not visualizer.render(world_state, fsm):
+                if not visualizer.render(world_state, blue_fsm, yellow_fsm):
                     print(f"\n  用户关闭了 3D 窗口, 结束仿真")
                     break
             else:
-                visualizer.render(world_state, fsm)
+                visualizer.render(world_state, blue_fsm)
 
-        # 5. 检查球是否进球
-        _check_goal(world_state)
+        # 5. 进球检测 → 计分 → 开球进入下一回合
+        if simulator is not None:
+            scorer = match.detect_goal(simulator.ball.x, simulator.ball.y)
+            if scorer is not None:
+                match.handle_goal(
+                    scorer, simulator, blue_fsm, yellow_fsm,
+                    timestamp=world_state.timestamp,
+                )
 
         # 维持帧率
         elapsed = time.time() - loop_start
@@ -301,6 +330,7 @@ def main():
             elapsed_total = time.time() - start_time
             print(f"  [{tick}/{total_ticks}] "
                   f"t={world_state.timestamp:.0f}s "
+                  f"score={match.scoreboard()} "
                   f"real_time={elapsed_total:.1f}s")
 
     # ================================================================
@@ -313,14 +343,20 @@ def main():
     print(f"  仿真时间: {args.duration}s")
     print(f"  实际耗时: {elapsed_total:.1f}s")
     print(f"  运行模式: {args.mode}")
+    print(f"  最终比分: {match.scoreboard()}")
     print(f"{'='*60}")
 
     # 打印决策摘要
-    summary = fsm.get_decision_summary()
-    print(f"\n  📊 决策统计:")
-    print(f"    总决策记录: {summary.get('total_decisions', 0)}")
-    print(f"    状态分布:   {summary.get('state_distribution', {})}")
-    print(f"    角色分布:   {summary.get('role_distribution', {})}")
+    blue_summary = blue_fsm.get_decision_summary()
+    yellow_summary = yellow_fsm.get_decision_summary()
+    print(f"\n  📊 蓝队决策统计:")
+    print(f"    总决策记录: {blue_summary.get('total_decisions', 0)}")
+    print(f"    状态分布:   {blue_summary.get('state_distribution', {})}")
+    print(f"    角色分布:   {blue_summary.get('role_distribution', {})}")
+    print(f"\n  📊 黄队决策统计:")
+    print(f"    总决策记录: {yellow_summary.get('total_decisions', 0)}")
+    print(f"    状态分布:   {yellow_summary.get('state_distribution', {})}")
+    print(f"    角色分布:   {yellow_summary.get('role_distribution', {})}")
 
     # 导出 CSV
     if args.export_csv:
@@ -332,17 +368,14 @@ def main():
         visualizer.close()
 
 
-def _check_goal(ws: WorldState):
-    """检查球是否进入球门 (简化版)"""
-    ball = ws.ball
-    # 左边球门 (对手进球)
-    if (ball.x <= -FIELD_WIDTH/2 and
-            -GOAL_WIDTH/2 <= ball.y <= GOAL_WIDTH/2):
-        pass  # 黄队得分 - 可扩展
-    # 右边球门 (己方进球)
-    if (ball.x >= FIELD_WIDTH/2 and
-            -GOAL_WIDTH/2 <= ball.y <= GOAL_WIDTH/2):
-        pass  # 蓝队得分 - 可扩展
+def _sync_roles_to_sim(simulator, team_view: WorldState) -> None:
+    """把本队视角中的角色写回仿真器机器人, 供下一帧 WorldState 读取。"""
+    if simulator is None:
+        return
+    for robot in team_view.teammates:
+        sim_r = simulator.get_robot_by_id(robot.id)
+        if sim_r is not None:
+            sim_r.role = robot.role
 
 
 if __name__ == '__main__':

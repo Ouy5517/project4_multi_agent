@@ -5,11 +5,25 @@ import json
 import math
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
-os.environ.setdefault("MUJOCO_GL", "glfw" if os.environ.get("DISPLAY") else "egl")
+# mujoco_soccer 依赖 webots/common，优先于仓库根目录的 course common
+_WEBOTS_ROOT = Path(__file__).resolve().parents[1]
+_ws = str(_WEBOTS_ROOT)
+if _ws in sys.path:
+    sys.path.remove(_ws)
+sys.path.insert(0, _ws)
+
+# Windows 只支持 glfw; Linux 无 DISPLAY 时用 egl 做无头渲染
+_gl = (os.environ.get("MUJOCO_GL") or "").lower()
+if os.name == "nt":
+    if _gl in ("", "egl", "osmesa"):
+        os.environ["MUJOCO_GL"] = "glfw"
+elif not _gl:
+    os.environ["MUJOCO_GL"] = "glfw" if os.environ.get("DISPLAY") else "egl"
 
 import mujoco
 

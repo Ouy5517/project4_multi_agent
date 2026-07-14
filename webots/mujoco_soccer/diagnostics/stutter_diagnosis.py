@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-os.environ.setdefault("MUJOCO_GL", "glfw" if os.environ.get("DISPLAY") else "egl")
+_gl = (os.environ.get("MUJOCO_GL") or "").lower()
+if os.name == "nt":
+    if _gl in ("", "egl", "osmesa"):
+        os.environ["MUJOCO_GL"] = "glfw"
+elif not _gl:
+    os.environ["MUJOCO_GL"] = "glfw" if os.environ.get("DISPLAY") else "egl"
 
 import mujoco
 import numpy as np

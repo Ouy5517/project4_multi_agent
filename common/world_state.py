@@ -16,7 +16,7 @@ import math
 from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH,
     GOAL_X, OUR_GOAL_X, TEAM_BLUE, TEAM_YELLOW,
-    ROBOT_KICK_RANGE
+    ROBOT_KICK_RANGE, POSSESSION_CONTESTED_RANGE
 )
 
 
@@ -169,6 +169,46 @@ class WorldState:
             return False
         return self.distance(robot, self.ball) <= ROBOT_KICK_RANGE
 
+    def team_has_possession(self) -> bool:
+        """己方是否比对方更接近球 (争球中略占优也算失控)"""
+        mate = self.closest_teammate_to_ball()
+        opp = self.closest_opponent_to_ball()
+        if mate is None:
+            return False
+        if opp is None:
+            return True
+        d_mate = self.distance(mate, self.ball)
+        d_opp = self.distance(opp, self.ball)
+        return d_mate + POSSESSION_CONTESTED_RANGE * 0.5 < d_opp
+
+    def perspective_for(self, team: "Team") -> "WorldState":
+        """
+        切换到某队视角: teammates=己方, opponents=对方,
+        our_goal=本方球门, opponent_goal=攻击球门。
+        蓝队视角与当前快照相同; 黄队视角对调双方与球门。
+        """
+        if team == Team.BLUE:
+            return WorldState(
+                ball=self.ball,
+                teammates=list(self.teammates),
+                opponents=list(self.opponents),
+                our_goal=self.our_goal,
+                opponent_goal=self.opponent_goal,
+                field_width=self.field_width,
+                field_height=self.field_height,
+                timestamp=self.timestamp,
+            )
+        return WorldState(
+            ball=self.ball,
+            teammates=list(self.opponents),
+            opponents=list(self.teammates),
+            our_goal=self.opponent_goal,
+            opponent_goal=self.our_goal,
+            field_width=self.field_width,
+            field_height=self.field_height,
+            timestamp=self.timestamp,
+        )
+
     @staticmethod
     def _dist(a, b) -> float:
         """内部距离计算"""
@@ -228,7 +268,7 @@ class WorldStateProvider:
                            x=r.x, y=r.y,
                            z=getattr(r, 'z', 0.0),
                            theta=r.theta,
-                           role=RobotRole.IDLE, kick_cooldown=r.kick_cooldown)
+                           role=r.role, kick_cooldown=r.kick_cooldown)
                      for r in yellow_raw]
 
         return WorldState(

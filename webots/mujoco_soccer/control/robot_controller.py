@@ -73,6 +73,7 @@ class RobotController:
         self._prev_speed = speed
 
         self.moving = (not arrived) or abs(effective_push) > 1e-4 or self.kick_swing.active
+        kick_progress = self.kick_swing.progress if self.kick_swing.active else -1.0
         self.gait.update(
             data,
             sim_time,
@@ -83,5 +84,7 @@ class RobotController:
             yaw_step=self.base.last_yaw_step,
             kick_offsets=self.kick_swing.joint_offsets(),
             braking=braking,
+            kick_style=self.kick_swing.style,
+            kick_progress=kick_progress,
         )
         return arrived

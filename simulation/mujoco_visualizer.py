@@ -48,7 +48,7 @@ class MuJoCoVisualizer:
     # 生命周期
     # ================================================================
 
-    def render(self, ws: WorldState, fsm) -> bool:
+    def render(self, ws: WorldState, fsm, yellow_fsm=None) -> bool:
         """
         渲染当前帧。
 
@@ -57,7 +57,8 @@ class MuJoCoVisualizer:
 
         Args:
             ws: 当前 WorldState 快照
-            fsm: DecisionFSM 实例 (用于读取决策状态)
+            fsm: 蓝队 DecisionFSM
+            yellow_fsm: 黄队 DecisionFSM (可选)
 
         Returns:
             True 如果 viewer 仍在运行, False 如果用户已关闭窗口
@@ -76,8 +77,8 @@ class MuJoCoVisualizer:
         self._sim.sync_to_mujoco()
 
         # 更新视觉元素
-        self._sim.update_status_rings(fsm)
-        self._sim.update_pass_lines(ws, fsm)
+        self._sim.update_status_rings(fsm, yellow_fsm)
+        self._sim.update_pass_lines(ws, fsm, yellow_fsm)
 
         # 刷新画面
         self._viewer.sync()

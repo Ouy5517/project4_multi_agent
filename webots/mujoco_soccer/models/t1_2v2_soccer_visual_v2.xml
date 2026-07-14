@@ -168,11 +168,11 @@
           <joint name="BLUE1_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_BLUE_1_left_upper_arm" pos="0 0.03 -0.08">
-            <joint name="BLUE1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="BLUE1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
             <geom name="T1_BLUE_1_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_BLUE_1_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_BLUE_1_left_lower_arm" pos="0 0 -0.16">
-              <joint name="BLUE1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="BLUE1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="BLUE1_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_BLUE_1_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_BLUE_1_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -183,11 +183,11 @@
           <joint name="BLUE1_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_BLUE_1_right_upper_arm" pos="0 -0.03 -0.08">
-            <joint name="BLUE1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="BLUE1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
             <geom name="T1_BLUE_1_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_BLUE_1_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_BLUE_1_right_lower_arm" pos="0 0 -0.16">
-              <joint name="BLUE1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="BLUE1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="BLUE1_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_BLUE_1_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_BLUE_1_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -290,11 +290,11 @@
           <joint name="BLUE2_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_BLUE_2_left_upper_arm" pos="0 0.03 -0.08">
-            <joint name="BLUE2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="BLUE2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
             <geom name="T1_BLUE_2_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_BLUE_2_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_BLUE_2_left_lower_arm" pos="0 0 -0.16">
-              <joint name="BLUE2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="BLUE2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="BLUE2_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_BLUE_2_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_BLUE_2_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -305,11 +305,11 @@
           <joint name="BLUE2_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_BLUE_2_right_upper_arm" pos="0 -0.03 -0.08">
-            <joint name="BLUE2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="BLUE2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
             <geom name="T1_BLUE_2_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_BLUE_2_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_BLUE_2_right_lower_arm" pos="0 0 -0.16">
-              <joint name="BLUE2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="BLUE2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="BLUE2_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_BLUE_2_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_BLUE_2_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -412,11 +412,11 @@
           <joint name="RED1_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_RED_1_left_upper_arm" pos="0 0.03 -0.08">
-            <joint name="RED1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="RED1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
             <geom name="T1_RED_1_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_RED_1_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_RED_1_left_lower_arm" pos="0 0 -0.16">
-              <joint name="RED1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="RED1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="RED1_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_RED_1_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_RED_1_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -427,11 +427,11 @@
           <joint name="RED1_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_RED_1_right_upper_arm" pos="0 -0.03 -0.08">
-            <joint name="RED1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="RED1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
             <geom name="T1_RED_1_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_RED_1_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_RED_1_right_lower_arm" pos="0 0 -0.16">
-              <joint name="RED1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="RED1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="RED1_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_RED_1_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_RED_1_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -534,11 +534,11 @@
           <joint name="RED2_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_RED_2_left_upper_arm" pos="0 0.03 -0.08">
-            <joint name="RED2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="RED2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
             <geom name="T1_RED_2_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_RED_2_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_RED_2_left_lower_arm" pos="0 0 -0.16">
-              <joint name="RED2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="RED2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="RED2_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_RED_2_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_RED_2_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
@@ -549,11 +549,11 @@
           <joint name="RED2_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
           <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
           <body name="T1_RED_2_right_upper_arm" pos="0 -0.03 -0.08">
-            <joint name="RED2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-0.8 0.8" damping="1.2"/>
+            <joint name="RED2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
             <geom name="T1_RED_2_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
             <geom name="T1_RED_2_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
             <body name="T1_RED_2_right_lower_arm" pos="0 0 -0.16">
-              <joint name="RED2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-1 1" damping="1"/>
+              <joint name="RED2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
               <joint name="RED2_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
               <geom name="T1_RED_2_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
               <geom name="T1_RED_2_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>

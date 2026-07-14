@@ -13,12 +13,13 @@ from typing import Dict, List, Tuple, Optional
 import math
 from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH, GOAL_X, OUR_GOAL_X,
-    ROBOT_MAX_SPEED, ROBOT_RADIUS, ROBOT_KICK_RANGE,
+    ROBOT_MAX_SPEED, ROBOT_TURN_SPEED, ROBOT_RADIUS, ROBOT_KICK_RANGE,
     BALL_FRICTION, BALL_RADIUS, BALL_MIN_VELOCITY,
     KICK_POWER_SCALE, DT, TEAM_BLUE, TEAM_YELLOW,
-    NUM_ROBOTS_PER_TEAM
+    NUM_ROBOTS_PER_TEAM, MIN_ROBOT_SEPARATION,
 )
 from common.world_state import Ball, Robot, Team, RobotRole
+from strategy.soccer_rules import clamp_out_of_enemy_goal_mouth, legalize_move_target
 
 
 class Simulator:
@@ -83,6 +84,10 @@ class Simulator:
         # 2. 更新机器人位置
         self._update_robots(dt)
 
+        # 2b. 碰撞排斥 + 规则硬裁剪
+        self._resolve_robot_collisions()
+        self._enforce_goal_mouth_ban()
+
         # 3. 更新足球物理
         self._update_ball(dt)
 
@@ -107,36 +112,84 @@ class Simulator:
         self._kick_queue.clear()
 
     def _update_robots(self, dt: float):
-        """更新机器人位置 (朝目标匀速移动)"""
+        """更新机器人位置 (朝目标匀速移动), 转向用 ROBOT_TURN_SPEED"""
+        max_turn = ROBOT_TURN_SPEED * dt
         for robots_dict in [self.blue_robots, self.yellow_robots]:
             for rid, robot in robots_dict.items():
-                # 转向
+                # 移动时自动朝前进方向转 (更接近真实足球)
+                if rid in self._move_targets and rid not in self._turn_targets:
+                    tx, ty = self._move_targets[rid]
+                    dx, dy = tx - robot.x, ty - robot.y
+                    if dx * dx + dy * dy > 1e-4:
+                        self._turn_targets[rid] = math.atan2(dy, dx) % (2 * math.pi)
+
                 if rid in self._turn_targets:
                     target_theta = self._turn_targets[rid]
                     diff = self._angle_diff(target_theta, robot.theta)
-                    max_turn = ROBOT_MAX_SPEED * dt
                     if abs(diff) <= max_turn:
                         robot.theta = target_theta
                         del self._turn_targets[rid]
                     else:
                         robot.theta += math.copysign(max_turn, diff)
 
-                # 移动
                 if rid in self._move_targets:
                     tx, ty = self._move_targets[rid]
                     dx = tx - robot.x
                     dy = ty - robot.y
                     dist = math.sqrt(dx**2 + dy**2)
-                    if dist < 0.05:  # 足够近, 到达目标
+                    if dist < 0.05:
                         robot.x, robot.y = tx, ty
                         del self._move_targets[rid]
                     else:
                         step = ROBOT_MAX_SPEED * dt
                         if step >= dist:
                             robot.x, robot.y = tx, ty
+                            del self._move_targets[rid]
                         else:
                             robot.x += (dx / dist) * step
                             robot.y += (dy / dist) * step
+
+    def _all_robots(self) -> List[Robot]:
+        return list(self.blue_robots.values()) + list(self.yellow_robots.values())
+
+    def _resolve_robot_collisions(self) -> None:
+        """两两软排斥, 避免机器人重叠成一堆。"""
+        robots = self._all_robots()
+        min_dist = MIN_ROBOT_SEPARATION
+        # 多遍迭代使连锁重叠分开
+        for _ in range(3):
+            for i in range(len(robots)):
+                for j in range(i + 1, len(robots)):
+                    a, b = robots[i], robots[j]
+                    dx = b.x - a.x
+                    dy = b.y - a.y
+                    dist = math.hypot(dx, dy)
+                    if dist < 1e-6:
+                        dx, dy, dist = 0.01, 0.0, 0.01
+                    if dist >= min_dist:
+                        continue
+                    push = (min_dist - dist) * 0.5
+                    ux, uy = dx / dist, dy / dist
+                    a.x -= ux * push
+                    a.y -= uy * push
+                    b.x += ux * push
+                    b.y += uy * push
+                    # 裁剪场地
+                    a.x = max(-FIELD_WIDTH / 2 + 0.2, min(FIELD_WIDTH / 2 - 0.2, a.x))
+                    a.y = max(-FIELD_HEIGHT / 2 + 0.2, min(FIELD_HEIGHT / 2 - 0.2, a.y))
+                    b.x = max(-FIELD_WIDTH / 2 + 0.2, min(FIELD_WIDTH / 2 - 0.2, b.x))
+                    b.y = max(-FIELD_HEIGHT / 2 + 0.2, min(FIELD_HEIGHT / 2 - 0.2, b.y))
+
+    def _enforce_goal_mouth_ban(self) -> None:
+        """物理层强制: 任何机器人不得钻进对方球门底。"""
+        for robot in self._all_robots():
+            nx, ny = clamp_out_of_enemy_goal_mouth(robot.x, robot.y, robot.team)
+            robot.x, robot.y = nx, ny
+
+    def _defenders_against(self, team: Team) -> List[Robot]:
+        if team == Team.BLUE:
+            return list(self.yellow_robots.values())
+        return list(self.blue_robots.values())
 
     def _update_ball(self, dt: float):
         """更新足球物理 (运动 + 摩擦)"""
@@ -154,13 +207,20 @@ class Simulator:
         if abs(self.ball.vy) < BALL_MIN_VELOCITY:
             self.ball.vy = 0.0
 
-        # 场地边界反弹 (X方向)
+        # 场地边界反弹 (X方向) — 门宽内不反弹, 交给进球检测
+        in_goal_y = abs(self.ball.y) <= GOAL_WIDTH / 2
         if self.ball.x < -FIELD_WIDTH / 2:
-            self.ball.x = -FIELD_WIDTH / 2
-            self.ball.vx *= -0.5
+            if in_goal_y:
+                self.ball.x = -FIELD_WIDTH / 2 - 0.01  # 越过门线算进球
+            else:
+                self.ball.x = -FIELD_WIDTH / 2
+                self.ball.vx *= -0.5
         elif self.ball.x > FIELD_WIDTH / 2:
-            self.ball.x = FIELD_WIDTH / 2
-            self.ball.vx *= -0.5
+            if in_goal_y:
+                self.ball.x = FIELD_WIDTH / 2 + 0.01
+            else:
+                self.ball.x = FIELD_WIDTH / 2
+                self.ball.vx *= -0.5
 
         # 场地边界反弹 (Y方向)
         if self.ball.y < -FIELD_HEIGHT / 2:
@@ -182,7 +242,19 @@ class Simulator:
     # ================================================================
 
     def set_move_target(self, robot_id: int, x: float, y: float):
-        """设置机器人移动目标"""
+        """设置机器人移动目标 (含越位/门底规则裁剪)"""
+        robot = self._get_robot(robot_id)
+        if robot is not None:
+            x, y = legalize_move_target(
+                x, y,
+                team=robot.team,
+                ball_x=self.ball.x,
+                defenders=self._defenders_against(robot.team),
+                apply_offside=True,
+            )
+        else:
+            x = max(-FIELD_WIDTH / 2, min(FIELD_WIDTH / 2, x))
+            y = max(-FIELD_HEIGHT / 2, min(FIELD_HEIGHT / 2, y))
         self._move_targets[robot_id] = (x, y)
 
     def set_turn_target(self, robot_id: int, theta: float):
@@ -198,10 +270,15 @@ class Simulator:
         self._kick_queue.append((robot_id, power, direction))
 
     def reset(self):
-        """重置所有位置"""
-        self.ball = Ball(x=0.0, y=0.0)
-        self.timestamp = 0.0
-        self.tick_count = 0
+        """重置所有位置 (含时间归零)"""
+        self.restart_kickoff(reset_clock=True)
+
+    def restart_kickoff(self, reset_clock: bool = False):
+        """开球: 球回中圈, 机器人回阵, 可保留比赛时钟。"""
+        self.ball = Ball(x=0.0, y=0.0, vx=0.0, vy=0.0)
+        if reset_clock:
+            self.timestamp = 0.0
+            self.tick_count = 0
         self._move_targets.clear()
         self._turn_targets.clear()
         self._kick_queue.clear()

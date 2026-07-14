@@ -83,12 +83,15 @@ class MuJoCoSimulator(Simulator):
     # 球离地高度
     BALL_Z = 0.055
 
-    # 可选跟随关节 (短名驱动之外)
+    # 跟随 / 扩展驱动关节: (joint 后缀, pose 属性, 缩放)
+    # pose 属性为 None 时用常数 scale 作为目标角
     _FOLLOW_JOINT_SUFFIXES = (
         ("Right_Ankle_Pitch", "r_hip", -0.25),
         ("Left_Ankle_Pitch", "l_hip", -0.25),
-        ("Right_Elbow_Pitch", "r_shoulder", 0.35),
-        ("Left_Elbow_Pitch", "l_shoulder", 0.35),
+        ("Right_Elbow_Pitch", "r_elbow", 1.0),
+        ("Left_Elbow_Pitch", "l_elbow", 1.0),
+        ("Right_Shoulder_Roll", "r_shoulder_roll", 1.0),
+        ("Left_Shoulder_Roll", "l_shoulder_roll", 1.0),
         ("Waist", "r_hip", -0.08),
         ("Head_pitch", None, 0.06),
     )
@@ -325,7 +328,7 @@ class MuJoCoSimulator(Simulator):
         mujoco.mj_forward(self.model, self.data)
 
     def _apply_limb_poses(self):
-        """把 LimbAnimator 的姿态写入短名关节, 并轻度驱动踝/肘/腰跟随"""
+        """把 LimbAnimator 姿态写入短名关节 + 肘/肩滚转/踝/腰"""
         for rid, joint_map in self._limb_qpos.items():
             pose: JointPose = self._limb_animator.get_pose(rid)
             for attr, qadr in joint_map.items():
@@ -345,12 +348,13 @@ class MuJoCoSimulator(Simulator):
     # 状态光圈 (根据 FSM 决策状态更新)
     # ================================================================
 
-    def update_status_rings(self, fsm):
+    def update_status_rings(self, fsm, yellow_fsm=None):
         """
         根据 DecisionFSM 的状态更新每个机器人的底部光圈颜色。
 
         Args:
-            fsm: DecisionFSM 实例, 需要支持 get_state(robot_id) → DecisionState
+            fsm: 蓝队 DecisionFSM
+            yellow_fsm: 黄队 DecisionFSM (可选)
         """
         all_robots = {**self.blue_robots, **self.yellow_robots}
         for rid in all_robots:
@@ -358,51 +362,55 @@ class MuJoCoSimulator(Simulator):
             if ring_id < 0:
                 continue
 
-            # 只对蓝方机器人显示决策状态颜色
-            if rid in self.blue_robots:
-                try:
+            state_name = "IDLE"
+            try:
+                if rid in self.blue_robots:
                     state = fsm.get_state(rid)
                     state_name = state.value if hasattr(state, 'value') else str(state)
-                except Exception:
-                    state_name = "IDLE"
-                color = STATE_RING_COLORS.get(state_name, DEFAULT_RING_COLOR)
-            else:
-                # 黄方(对手): 固定暗色光圈
-                color = (0.7, 0.6, 0.1, 0.5)
+                elif yellow_fsm is not None:
+                    state = yellow_fsm.get_state(rid)
+                    state_name = state.value if hasattr(state, 'value') else str(state)
+            except Exception:
+                state_name = "IDLE"
 
+            color = STATE_RING_COLORS.get(state_name, DEFAULT_RING_COLOR)
+            # 黄队光圈略偏暖色以便区分
+            if rid in self.yellow_robots and state_name == "IDLE":
+                color = (0.75, 0.55, 0.12, 0.55)
             self._set_geom_rgba(ring_id, color)
 
     # ================================================================
     # 传球连线
     # ================================================================
 
-    def update_pass_lines(self, ws: WorldState, fsm):
+    def update_pass_lines(self, ws: WorldState, fsm, yellow_fsm=None):
         """
         根据当前 PASS 状态绘制传球连线。
-
-        在 PASS 状态机器人和接球目标之间绘制绿色虚线。
+        蓝/黄队 PASS 都绘制。
         """
         active_lines = []
 
-        for robot in ws.teammates:
-            try:
-                state = fsm.get_state(robot.id)
-                state_name = state.value if hasattr(state, 'value') else str(state)
-            except Exception:
-                continue
+        def _collect(source_fsm, robots):
+            if source_fsm is None:
+                return
+            for robot in robots:
+                try:
+                    state = source_fsm.get_state(robot.id)
+                    state_name = state.value if hasattr(state, 'value') else str(state)
+                except Exception:
+                    continue
+                if state_name != "PASS":
+                    continue
+                target_id = source_fsm.get_pass_target_id(robot.id)
+                if target_id is None:
+                    continue
+                receiver = ws.get_robot_by_id(target_id)
+                if receiver is None:
+                    continue
+                active_lines.append((robot, receiver))
 
-            if state_name != "PASS":
-                continue
-
-            target_id = fsm.get_pass_target_id(robot.id)
-            if target_id is None:
-                continue
-
-            receiver = ws.get_robot_by_id(target_id)
-            if receiver is None:
-                continue
-
-            active_lines.append((robot, receiver))
+        _collect(fsm, ws.teammates)
+        _collect(yellow_fsm, ws.opponents)
 
         # 更新每条传球线
         for i in range(3):
@@ -412,7 +420,6 @@ class MuJoCoSimulator(Simulator):
             if i < len(active_lines) and mocap_id >= 0:
                 passer, receiver = active_lines[i]
 
-                # 计算中点位置和方向
                 mid_x = (passer.x + receiver.x) / 2
                 mid_y = (passer.y + receiver.y) / 2
                 dx = receiver.x - passer.x
@@ -420,21 +427,14 @@ class MuJoCoSimulator(Simulator):
                 dist = math.sqrt(dx**2 + dy**2)
                 angle = math.atan2(dy, dx)
 
-                # 更新 mocap 位置 (中点)
                 self.data.mocap_pos[mocap_id] = [mid_x, mid_y, 0.04]
-                # 旋转到连线方向
                 quat = _yaw_to_quat(angle)
                 self.data.mocap_quat[mocap_id] = list(quat)
 
-                # 更新 geom 大小 (半长为距离的一半)
                 if geom_id >= 0:
                     self.model.geom_size[geom_id] = [dist / 2, 0.015, 0.005]
-
-                # 显示
-                if geom_id >= 0:
                     self._set_geom_rgba(geom_id, (0.3, 1.0, 0.15, 0.85))
             else:
-                # 隐藏未使用的传球线
                 if geom_id >= 0:
                     self._set_geom_rgba(geom_id, (0.3, 1.0, 0.15, 0.0))
 

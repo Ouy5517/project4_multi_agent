@@ -16,8 +16,7 @@ import math
 
 from common.config import (
     DT, REEVALUATE_INTERVAL, STATE_MIN_DURATION,
-    ROBOT_KICK_RANGE, SHOOT_RANGE, OUR_GOAL_X, GOAL_X,
-    TEAM_BLUE
+    ROBOT_KICK_RANGE, SHOOT_RANGE, TEAM_BLUE
 )
 from common.world_state import (
     WorldState, Robot, Ball, Team, RobotRole
@@ -109,15 +108,26 @@ class RobotFSM:
 class DecisionFSM:
     """
     多机器人协同决策引擎。
-    每帧调用 update() 驱动所有机器人的决策。
+    每帧调用 update() 驱动本队机器人的决策。
+    通过 WorldState.perspective_for(team) 支持蓝/黄双向攻防。
     """
 
-    def __init__(self, world_state: WorldState,
-                 action: RobotActionInterface,
-                 num_robots: int = 3):
+    def __init__(
+        self,
+        world_state: WorldState,
+        action: RobotActionInterface,
+        num_robots: int = 3,
+        robot_ids: Optional[List[int]] = None,
+        team: Team = Team.BLUE,
+    ):
         self._ws = world_state
         self._action = action
-        self._num_robots = num_robots
+        self._team = team
+        if robot_ids is not None:
+            self._robot_ids = list(robot_ids)
+        else:
+            self._robot_ids = list(range(num_robots))
+        self._num_robots = len(self._robot_ids)
 
         # 策略模块
         self.pass_strategy = PassStrategy(world_state)
@@ -128,18 +138,17 @@ class DecisionFSM:
 
         # 每个机器人一个状态机
         self._fsms: Dict[int, RobotFSM] = {}
-        for i in range(num_robots):
-            self._fsms[i] = RobotFSM(i)
+        for rid in self._robot_ids:
+            self._fsms[rid] = RobotFSM(rid)
 
         # 角色
         self._ball_carrier_id: Optional[int] = None
         self._supporter_id: Optional[int] = None
 
         # 日志
-        self.transitions: List[FSMTransition] = []  # 当前帧的转换
-        self.decision_logs: List[DecisionLog] = []  # 累积日志
+        self.transitions: List[FSMTransition] = []
+        self.decision_logs: List[DecisionLog] = []
 
-        # 回合统计
         self.tick_count: int = 0
 
     # ================================================================
@@ -169,7 +178,7 @@ class DecisionFSM:
         roles = self._assign_roles()
 
         # 对每个机器人执行决策
-        for robot_id in range(self._num_robots):
+        for robot_id in self._robot_ids:
             fsm = self._fsms[robot_id]
             old_state = fsm.state
             role = roles.get(robot_id, RobotRole.IDLE)
@@ -270,12 +279,17 @@ class DecisionFSM:
         if role == RobotRole.BALL_CARRIER:
             fsm.transition(DecisionState.CHASE, "assigned BALL_CARRIER")
         elif role == RobotRole.SUPPORTER:
-            target = self.position_strategy.calculate_support_position(
-                self._ball_carrier_id or 0, robot_id)
-            self._action.move_to(robot_id, *target)
+            if not self._ws.team_has_possession():
+                # 丢球时支援前压逼抢
+                ball = self._ws.ball
+                self._action.move_to(robot_id, ball.x, ball.y)
+                fsm.transition(DecisionState.CHASE, "press when team lost ball")
+            else:
+                target = self.position_strategy.calculate_support_position(
+                    self._ball_carrier_id or robot_id, robot_id)
+                self._action.move_to(robot_id, *target)
         elif role == RobotRole.DEFENDER:
-            target = self.block_strategy.calculate_defensive_position(robot_id)
-            self._action.move_to(robot_id, *target)
+            fsm.transition(DecisionState.BLOCK, "hold defensive line")
 
     # ---- CHASE: 追球 ----
 
@@ -299,8 +313,10 @@ class DecisionFSM:
             if fsm.can_reevaluate():
                 self._evaluate_next_action(robot_id, fsm)
         else:
-            # 追球
+            # 追球 (略预瞄球速, 争球更主动)
             _, tx, ty = self.dribble_strategy.approach_ball(robot_id)
+            tx += ball.vx * 0.22
+            ty += ball.vy * 0.22
             self._action.move_to(robot_id, tx, ty)
 
     # ---- DRIBBLE: 带球 ----
@@ -316,8 +332,9 @@ class DecisionFSM:
             return
 
         # 带球朝对方球门
-        target_x = GOAL_X
-        target_y = 0.0  # 球门中心
+        goal = self._ws.opponent_goal
+        target_x = goal.x
+        target_y = goal.center[1]
 
         should_dribble, direction, power, dist = \
             self.dribble_strategy.dribble_toward(robot_id, target_x, target_y)
@@ -380,40 +397,57 @@ class DecisionFSM:
     # ---- BLOCK: 防守 ----
 
     def _handle_block(self, robot_id: int, role: RobotRole, fsm: RobotFSM):
-        # 如果重新分配为持球者
+        # 如果重新分配为持球者 → 上前争球
         if role == RobotRole.BALL_CARRIER:
             fsm.transition(DecisionState.CHASE, "now ball carrier")
             return
-
-        if not self.block_strategy.is_goal_threatened():
-            fsm.transition(DecisionState.CHASE, "threat cleared")
+        if role == RobotRole.SUPPORTER and self._ws.team_has_possession():
+            fsm.transition(DecisionState.IDLE, "support after regain")
             return
 
-        target = self.block_strategy.calculate_defensive_position(robot_id)
-        self._action.move_to(robot_id, *target)
+        # 防守者始终卡在 球—己方球门 连线上; 受威胁时更贴球
+        if self.block_strategy.is_goal_threatened():
+            target = self.block_strategy.calculate_defensive_position(robot_id)
+            # 略前移压迫
+            ball = self._ws.ball
+            gx, gy = self._ws.our_goal.center
+            tx = 0.55 * target[0] + 0.45 * ball.x
+            ty = 0.55 * target[1] + 0.45 * ball.y
+            self._action.move_to(robot_id, tx, ty)
+        else:
+            target = self.block_strategy.calculate_defensive_position(robot_id)
+            self._action.move_to(robot_id, *target)
 
     # ---- 评估下一步动作 ----
 
     def _evaluate_next_action(self, robot_id: int, fsm: RobotFSM):
         """
         在控制球后评估最佳动作: SHOOT > PASS > DRIBBLE
+        争球不利时优先带球摆脱或回传。
         """
-        # 先评估射门
         shoot_eval = self.shoot_strategy.evaluate_shoot_opportunity(robot_id)
-        if shoot_eval.is_viable and shoot_eval.score > 0.5:
+        if shoot_eval.is_viable and shoot_eval.score > 0.45:
             fsm.transition(DecisionState.SHOOT, f"shoot opportunity (score={shoot_eval.score:.2f})")
             return
 
-        # 再评估传球
         pass_options = self.pass_strategy.evaluate_pass_options(robot_id)
-        if pass_options and pass_options[0].score > 0.4:
-            fsm.transition(DecisionState.PASS,
-                          f"pass to {pass_options[0].receiver_id} (score={pass_options[0].score:.2f})")
+        # 对方逼抢近时更倾向传球
+        press_pass_boost = 0.0
+        opp = self._ws.closest_opponent_to_ball()
+        robot = self._ws.get_robot_by_id(robot_id)
+        if opp is not None and robot is not None:
+            if self._ws.distance(robot, opp) < 1.2:
+                press_pass_boost = 0.15
+        pass_threshold = 0.35 - press_pass_boost
+        if pass_options and pass_options[0].score > pass_threshold:
+            fsm.transition(
+                DecisionState.PASS,
+                f"pass to {pass_options[0].receiver_id} (score={pass_options[0].score:.2f})",
+            )
             fsm.pass_target_id = pass_options[0].receiver_id
             return
 
-        # 默认带球
-        fsm.transition(DecisionState.DRIBBLE, "no better option")
+        fsm.transition(DecisionState.DRIBBLE, "advance toward goal")
 
     # ================================================================
     # 日志
@@ -421,7 +455,7 @@ class DecisionFSM:
 
     def _log_decisions(self, ws: WorldState, roles: Dict[int, RobotRole]):
         """记录当前帧的决策"""
-        for robot_id in range(self._num_robots):
+        for robot_id in self._robot_ids:
             fsm = self._fsms[robot_id]
             robot = ws.get_robot_by_id(robot_id)
             role = roles.get(robot_id, RobotRole.IDLE)
@@ -488,3 +522,15 @@ class DecisionFSM:
                     log.state, log.role, f"{log.x:.2f}", f"{log.y:.2f}",
                     log.action, log.reason
                 ])
+
+    def reset_round(self) -> None:
+        """开球回合: 清空状态机到 IDLE。"""
+        for fsm in self._fsms.values():
+            fsm.state = DecisionState.IDLE
+            fsm.previous_state = DecisionState.IDLE
+            fsm.state_timer = 0.0
+            fsm.target = None
+            fsm.pass_target_id = None
+        self._ball_carrier_id = None
+        self._supporter_id = None
+        self.transitions.clear()

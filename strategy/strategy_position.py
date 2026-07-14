@@ -11,7 +11,7 @@ from typing import List, Tuple, Optional
 import math
 from common.config import (
     SUPPORT_DISTANCE, FIELD_WIDTH, FIELD_HEIGHT,
-    ROBOT_RADIUS, GOAL_X
+    ROBOT_RADIUS
 )
 from common.world_state import WorldState, Robot
 
@@ -33,33 +33,26 @@ class PositionStrategy:
                                     robot_id: int) -> Tuple[float, float]:
         """
         计算支援接应位置。
-        策略：在持球者后方约45度位置，形成三角进攻阵型。
+        策略：在持球者侧后方约45度位置，形成三角进攻阵型 (朝攻击球门方向)。
         """
         carrier = self._ws.get_robot_by_id(ball_carrier_id)
         if carrier is None:
             return self.calculate_default_position(robot_id)
 
-        ball = self._ws.ball
+        attack_x = self._ws.opponent_goal.x
+        attack_sign = 1.0 if attack_x >= 0 else -1.0
 
-        # 向量: 持球者 → 对方球门
-        goal_x = GOAL_X
-        dx_goal = goal_x - carrier.x
-        dy_goal = 0 - carrier.y  # 指向球门中心
-
-        # 根据机器人编号决定是左支援还是右支援
+        # 落在进攻方向的侧后方
         if robot_id % 2 == 0:
-            # 上方支援
-            offset_x = -0.5
+            offset_x = -0.5 * attack_sign
             offset_y = SUPPORT_DISTANCE
         else:
-            # 下方支援
-            offset_x = -0.5
+            offset_x = -0.5 * attack_sign
             offset_y = -SUPPORT_DISTANCE
 
         target_x = carrier.x + offset_x
         target_y = carrier.y + offset_y
 
-        # 裁剪到场地内
         target_x = max(-FIELD_WIDTH/2, min(FIELD_WIDTH/2, target_x))
         target_y = max(-FIELD_HEIGHT/2, min(FIELD_HEIGHT/2, target_y))
 
@@ -72,22 +65,21 @@ class PositionStrategy:
     def calculate_open_space(self, robot_id: int) -> Tuple[float, float]:
         """
         寻找空当位置。
-        策略：在对方半场寻找远离对手的开放区域。
+        策略：在进攻半场寻找远离对手的开放区域。
         """
         robot = self._ws.get_robot_by_id(robot_id)
         if robot is None:
             return (0, 0)
 
-        # 在对方半场采样，找对手密度最低的位置
-        best_pos = (GOAL_X * 0.3, 0)
-        best_score = -1
+        attack_x = self._ws.opponent_goal.x
+        best_pos = (attack_x * 0.3, 0)
+        best_score = -1.0
 
         for x_ratio in [0.2, 0.4, 0.6]:
             for y_ratio in [-0.6, -0.3, 0, 0.3, 0.6]:
-                sx = FIELD_WIDTH / 2 * x_ratio
+                sx = attack_x * x_ratio
                 sy = FIELD_HEIGHT / 2 * y_ratio
 
-                # 距离最近对手的距离作为分数
                 min_opp_dist = float('inf')
                 for opp in self._ws.opponents:
                     d = math.sqrt((sx - opp.x)**2 + (sy - opp.y)**2)

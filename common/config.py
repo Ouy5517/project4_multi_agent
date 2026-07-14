@@ -13,16 +13,21 @@ GOAL_WIDTH = 2.0              # 球门宽度 (米), Y轴跨度
 GOAL_DEPTH = 0.5              # 球门深度 (米)
 GOAL_X = FIELD_WIDTH / 2      # 对方球门 X 坐标
 OUR_GOAL_X = -FIELD_WIDTH / 2 # 己方球门 X 坐标
+# 简化规则区: 对方球门底禁止抢球 / 站住
+GOAL_MOUTH_DEPTH = 0.85       # 从门线向场内的禁抢深度 (米)
+PENALTY_BOX_DEPTH = 1.6       # 简化禁区深度 (米), 用于防守站位参考
+MIN_ROBOT_SEPARATION = 0.34   # 机器人中心最小间距 ≈ 2*ROBOT_RADIUS + 余量
+OFFSIDE_BUFFER = 0.15         # 越位线回撤缓冲 (米)
 
 # ============================================================
 # 机器人物理参数
 # ============================================================
-ROBOT_MAX_SPEED = 0.5         # 最大移动速度 (m/s)
+ROBOT_MAX_SPEED = 0.65        # 最大移动速度 (m/s) — 略提速更贴足球节奏
 ROBOT_RADIUS = 0.15           # 碰撞检测半径 (米)
 ROBOT_KICK_RANGE = 0.3        # 踢球最大距离 (米)
 ROBOT_KICK_POWER_MAX = 100    # 最大踢球力度
 ROBOT_KICK_COOLDOWN = 1.0     # 踢球冷却时间 (秒)
-ROBOT_TURN_SPEED = 3.14159    # 转向速度 (rad/s)
+ROBOT_TURN_SPEED = 3.14159    # 转向速度 (rad/s) ≈ 180°/s
 
 # ============================================================
 # 足球物理参数
