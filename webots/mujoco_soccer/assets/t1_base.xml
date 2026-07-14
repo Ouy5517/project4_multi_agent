@@ -1,0 +1,5 @@
+<!-- Booster T1 kinematic proxy for MuJoCo demonstration.
+     The generated full model uses the joint names and body layout declared
+     in mujoco_soccer/tools/generate_proxy_model.py. -->
+<mujoco model="T1_MUJOCO_VISUAL_PROXY_BASE"/>
+

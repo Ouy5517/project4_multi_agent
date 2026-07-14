@@ -1,0 +1,10 @@
+mode: ASSISTED_2V2_PHYSICAL
+opening_hold_seconds: 5.0
+stage_hold_seconds: 1.0
+finish_hold_seconds: 20.0
+normal_speed_m_s: 0.18
+support_speed_m_s: 0.24
+precision_speed_m_s: 0.08
+root_assisted_push_speed_m_s: 0.06
+max_demo_seconds: 240
+contacts_required: 5

@@ -1,0 +1,20 @@
+udp:
+  supervisor_port: 18120
+  robot_ports:
+    BLUE_1: 18101
+    BLUE_2: 18102
+    RED_1: 18103
+    RED_2: 18104
+gait:
+  cycle_seconds: 1.1
+  hip_pitch_amplitude: 0.20
+  knee_pitch_amplitude: 0.25
+  ankle_amplitude: 0.08
+  hip_roll_amplitude: 0.045
+  shoulder_pitch_amplitude: 0.23
+  elbow_amplitude: 0.12
+push:
+  duration_seconds: 0.9
+  forward_displacement_m: 0.07
+  lateral_displacement_m: 0.0
+  vertical_displacement_m: 0.0

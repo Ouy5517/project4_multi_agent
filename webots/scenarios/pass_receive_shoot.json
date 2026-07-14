@@ -1,0 +1,68 @@
+{
+  "scenario_name": "pass_receive_shoot",
+  "timestamp": 3.0,
+  "ball": {"x": 0.0, "y": 0.0, "vx": 0.0, "vy": 0.0},
+  "robots": [
+    {
+      "robot_id": "T1_A",
+      "team": "blue",
+      "x": 0.0,
+      "y": 0.0,
+      "theta": 0.0,
+      "role": "attacker",
+      "has_ball": true
+    },
+    {
+      "robot_id": "T1_B",
+      "team": "blue",
+      "x": 1.45,
+      "y": 0.6,
+      "theta": 0.0,
+      "role": "support",
+      "has_ball": false
+    }
+  ],
+  "opponents": [
+    {"opponent_id": "OP_1", "x": 0.2, "y": -1.4},
+    {"opponent_id": "OP_2", "x": 2.0, "y": -1.2}
+  ],
+  "our_goal": {"x": -3.0, "y": 0.0},
+  "enemy_goal": {"x": 3.0, "y": 0.0},
+  "field_width": 6.0,
+  "field_height": 4.0,
+  "next_states": [
+    {
+      "scenario_name": "pass_receive_shoot_after_receive",
+      "timestamp": 3.5,
+      "ball": {"x": 1.45, "y": 0.3, "vx": 0.0, "vy": 0.0},
+      "robots": [
+        {
+          "robot_id": "T1_A",
+          "team": "blue",
+          "x": 0.2,
+          "y": -0.2,
+          "theta": 0.0,
+          "role": "attacker",
+          "has_ball": false
+        },
+        {
+          "robot_id": "T1_B",
+          "team": "blue",
+          "x": 1.45,
+          "y": 0.3,
+          "theta": 0.0,
+          "role": "support",
+          "has_ball": true
+        }
+      ],
+      "opponents": [
+        {"opponent_id": "OP_1", "x": 0.2, "y": -1.4},
+        {"opponent_id": "OP_2", "x": 2.0, "y": -1.2}
+      ],
+      "our_goal": {"x": -3.0, "y": 0.0},
+      "enemy_goal": {"x": 3.0, "y": 0.0},
+      "field_width": 6.0,
+      "field_height": 4.0
+    }
+  ]
+}

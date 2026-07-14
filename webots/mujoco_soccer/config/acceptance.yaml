@@ -1,0 +1,21 @@
+per_robot_min_path: 1.0
+per_robot_max_path: 4.0
+per_robot_min_continuous_motion: 0.5
+per_robot_min_turn_deg: 25.0
+hip_peak_to_peak_min: 0.25
+knee_peak_to_peak_min: 0.30
+shoulder_peak_to_peak_min: 0.28
+gait_active_seconds_min: 3.0
+blue1_contacts_min: 3
+blue2_contacts_min: 2
+red1_contacts_min: 1
+red2_contacts_min: 1
+total_contacts_min: 7
+dribble_displacement_min: 0.18
+pass_displacement_min: 0.35
+receive_displacement_min: 0.05
+shoot_displacement_min: 0.40
+red1_clear_displacement_min: 0.25
+red2_counter_displacement_min: 0.25
+ball_total_path_min: 1.20
+
