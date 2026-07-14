@@ -15,11 +15,16 @@ import math
 from common.config import (
     FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH, GOAL_X, OUR_GOAL_X,
     ROBOT_MAX_SPEED, ROBOT_RADIUS, ROBOT_KICK_RANGE,
-    BALL_FRICTION, BALL_RADIUS, BALL_MIN_VELOCITY,
+    ROBOT_TURN_SPEED,
+    BALL_DAMPING_PER_SECOND, BALL_RADIUS, BALL_MIN_VELOCITY,
     KICK_POWER_SCALE, DT, TEAM_BLUE, TEAM_YELLOW,
     NUM_ROBOTS_PER_TEAM
 )
 from common.world_state import Ball, Robot, Team, RobotRole
+
+
+class InvalidSimulationState(ValueError):
+    """Raised when simulator state contains non-finite values."""
 
 
 class Simulator:
@@ -38,6 +43,7 @@ class Simulator:
         self._turn_targets: Dict[int, float] = {}
         self._kick_queue: List[Tuple[int, float, float]] = []  # (robot_id, power, direction)
         self._init_positions = {}  # 用于 reset
+        self._init_ball = Ball(x=0.0, y=0.0)
 
         self._initialize_positions(num_blue, num_yellow)
 
@@ -86,6 +92,7 @@ class Simulator:
             robot.id: (robot.x, robot.y, robot.theta)
             for robot in list(self.blue_robots.values()) + list(self.yellow_robots.values())
         }
+        self._init_ball = deepcopy(self.ball)
 
     # ================================================================
     # 主更新循环
@@ -93,6 +100,9 @@ class Simulator:
 
     def update(self, dt: float = DT):
         """执行一个时间步长"""
+        self._validate_state()
+        events: List[str] = []
+
         # 1. 处理踢球队列
         self._process_kicks()
 
@@ -101,12 +111,19 @@ class Simulator:
 
         # 3. 更新足球物理
         self._update_ball(dt)
+        events.extend(self._handle_field_events())
 
-        # 4. 更新冷却
+        # 4. 处理碰撞与占位
+        if self._resolve_robot_collisions():
+            events.append("COLLISION")
+
+        # 5. 更新冷却
         self._update_cooldowns(dt)
 
         self.timestamp += dt
         self.tick_count += 1
+        self._validate_state()
+        return events
 
     def _process_kicks(self):
         """处理待执行的踢球动作"""
@@ -130,7 +147,7 @@ class Simulator:
                 if rid in self._turn_targets:
                     target_theta = self._turn_targets[rid]
                     diff = self._angle_diff(target_theta, robot.theta)
-                    max_turn = ROBOT_MAX_SPEED * dt
+                    max_turn = ROBOT_TURN_SPEED * dt
                     if abs(diff) <= max_turn:
                         robot.theta = target_theta
                         del self._turn_targets[rid]
@@ -160,9 +177,10 @@ class Simulator:
         self.ball.x += self.ball.vx * dt
         self.ball.y += self.ball.vy * dt
 
-        # 摩擦减速
-        self.ball.vx *= BALL_FRICTION
-        self.ball.vy *= BALL_FRICTION
+        # 时间步无关摩擦减速
+        damping = math.exp(-BALL_DAMPING_PER_SECOND * dt)
+        self.ball.vx *= damping
+        self.ball.vy *= damping
 
         # 停止阈值
         if abs(self.ball.vx) < BALL_MIN_VELOCITY:
@@ -170,21 +188,72 @@ class Simulator:
         if abs(self.ball.vy) < BALL_MIN_VELOCITY:
             self.ball.vy = 0.0
 
-        # 场地边界反弹 (X方向)
-        if self.ball.x < -FIELD_WIDTH / 2:
-            self.ball.x = -FIELD_WIDTH / 2
-            self.ball.vx *= -0.5
-        elif self.ball.x > FIELD_WIDTH / 2:
-            self.ball.x = FIELD_WIDTH / 2
-            self.ball.vx *= -0.5
+    def _handle_field_events(self) -> List[str]:
+        """Detect goals and out-of-bounds before applying boundary clamping."""
+        events: List[str] = []
+        half_w = FIELD_WIDTH / 2
+        half_h = FIELD_HEIGHT / 2
+        in_goal_opening = -GOAL_WIDTH / 2 <= self.ball.y <= GOAL_WIDTH / 2
 
-        # 场地边界反弹 (Y方向)
-        if self.ball.y < -FIELD_HEIGHT / 2:
-            self.ball.y = -FIELD_HEIGHT / 2
-            self.ball.vy *= -0.5
-        elif self.ball.y > FIELD_HEIGHT / 2:
-            self.ball.y = FIELD_HEIGHT / 2
-            self.ball.vy *= -0.5
+        if self.ball.x >= half_w:
+            if in_goal_opening:
+                events.append("GOAL_BLUE")
+            else:
+                events.append("OUT_OF_BOUNDS")
+                self.ball.x = half_w
+            self.ball.vx = 0.0
+            self.ball.vy = 0.0
+        elif self.ball.x <= -half_w:
+            if in_goal_opening:
+                events.append("GOAL_YELLOW")
+            else:
+                events.append("OUT_OF_BOUNDS")
+                self.ball.x = -half_w
+            self.ball.vx = 0.0
+            self.ball.vy = 0.0
+
+        if self.ball.y > half_h:
+            events.append("OUT_OF_BOUNDS")
+            self.ball.y = half_h
+            self.ball.vx = 0.0
+            self.ball.vy = 0.0
+        elif self.ball.y < -half_h:
+            events.append("OUT_OF_BOUNDS")
+            self.ball.y = -half_h
+            self.ball.vx = 0.0
+            self.ball.vy = 0.0
+
+        return events
+
+    def _resolve_robot_collisions(self) -> bool:
+        robots = list(self.blue_robots.values()) + list(self.yellow_robots.values())
+        collided = False
+        min_dist = 2 * ROBOT_RADIUS
+        for i, first in enumerate(robots):
+            for second in robots[i + 1:]:
+                dx = second.x - first.x
+                dy = second.y - first.y
+                dist = math.hypot(dx, dy)
+                if dist >= min_dist:
+                    continue
+                collided = True
+                if dist == 0.0:
+                    nx, ny = 1.0, 0.0
+                else:
+                    nx, ny = dx / dist, dy / dist
+                correction = (min_dist - dist) / 2
+                first.x -= nx * correction
+                first.y -= ny * correction
+                second.x += nx * correction
+                second.y += ny * correction
+                self._clamp_robot(first)
+                self._clamp_robot(second)
+        return collided
+
+    @staticmethod
+    def _clamp_robot(robot: Robot):
+        robot.x = max(-FIELD_WIDTH / 2, min(FIELD_WIDTH / 2, robot.x))
+        robot.y = max(-FIELD_HEIGHT / 2, min(FIELD_HEIGHT / 2, robot.y))
 
     def _update_cooldowns(self, dt: float):
         """更新所有机器人的冷却时间"""
@@ -215,7 +284,7 @@ class Simulator:
 
     def reset(self):
         """重置所有位置"""
-        self.ball = Ball(x=0.0, y=0.0)
+        self.ball = deepcopy(self._init_ball)
         self.timestamp = 0.0
         self.tick_count = 0
         self._move_targets.clear()
@@ -227,6 +296,23 @@ class Simulator:
                 robot.x, robot.y, robot.theta = x, y, theta
                 robot.kick_cooldown = 0.0
                 robot.role = RobotRole.IDLE
+
+    def _validate_state(self):
+        values = [
+            ("ball.x", self.ball.x),
+            ("ball.y", self.ball.y),
+            ("ball.vx", self.ball.vx),
+            ("ball.vy", self.ball.vy),
+        ]
+        for robot in list(self.blue_robots.values()) + list(self.yellow_robots.values()):
+            values.extend([
+                (f"robot[{robot.id}].x", robot.x),
+                (f"robot[{robot.id}].y", robot.y),
+                (f"robot[{robot.id}].theta", robot.theta),
+            ])
+        for name, value in values:
+            if not math.isfinite(value):
+                raise InvalidSimulationState(f"{name}: non-finite value")
 
     # ================================================================
     # 查询接口
