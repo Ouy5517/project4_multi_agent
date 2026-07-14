@@ -1,0 +1,9 @@
+cycle_seconds: 1.0
+hip_pitch_amplitude: 0.24
+knee_pitch_amplitude: 0.32
+ankle_pitch_amplitude: 0.10
+hip_roll_amplitude: 0.06
+shoulder_pitch_amplitude: 0.32
+elbow_pitch_amplitude: 0.16
+settle_seconds: 0.5
+

@@ -1,0 +1,246 @@
+{
+  "motors": {
+    "AAHead_yaw": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "head"
+    },
+    "Head_pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "head"
+    },
+    "Left_Shoulder_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_arm"
+    },
+    "Left_Shoulder_Roll": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_arm"
+    },
+    "Left_Elbow_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_arm"
+    },
+    "Left_Elbow_Yaw": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_arm"
+    },
+    "Right_Shoulder_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_arm"
+    },
+    "Right_Shoulder_Roll": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_arm"
+    },
+    "Right_Elbow_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_arm"
+    },
+    "Right_Elbow_Yaw": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_arm"
+    },
+    "Waist": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "torso"
+    },
+    "Left_Hip_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_hip_pitch"
+    },
+    "Left_Hip_Roll": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_hip_roll"
+    },
+    "Left_Hip_Yaw": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_hip_yaw"
+    },
+    "Left_Knee_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_knee"
+    },
+    "Crank_Up_Left": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_ankle_pitch"
+    },
+    "Crank_Down_Left": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "left_ankle_roll"
+    },
+    "Right_Hip_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_hip_pitch"
+    },
+    "Right_Hip_Roll": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_hip_roll"
+    },
+    "Right_Hip_Yaw": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_hip_yaw"
+    },
+    "Right_Knee_Pitch": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_knee"
+    },
+    "Crank_Up_Right": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_ankle_pitch"
+    },
+    "Crank_Down_Right": {
+      "minPosition": 0.0,
+      "maxPosition": 0.0,
+      "maxVelocity": 10.0,
+      "availableTorque": 10000.0,
+      "maxTorque": 10000.0,
+      "class": "right_ankle_roll"
+    }
+  },
+  "classes": {
+    "head": [
+      "AAHead_yaw",
+      "Head_pitch"
+    ],
+    "left_arm": [
+      "Left_Shoulder_Pitch",
+      "Left_Shoulder_Roll",
+      "Left_Elbow_Pitch",
+      "Left_Elbow_Yaw"
+    ],
+    "right_arm": [
+      "Right_Shoulder_Pitch",
+      "Right_Shoulder_Roll",
+      "Right_Elbow_Pitch",
+      "Right_Elbow_Yaw"
+    ],
+    "torso": [
+      "Waist"
+    ],
+    "left_hip_pitch": [
+      "Left_Hip_Pitch"
+    ],
+    "left_hip_roll": [
+      "Left_Hip_Roll"
+    ],
+    "left_hip_yaw": [
+      "Left_Hip_Yaw"
+    ],
+    "left_knee": [
+      "Left_Knee_Pitch"
+    ],
+    "left_ankle_pitch": [
+      "Crank_Up_Left"
+    ],
+    "left_ankle_roll": [
+      "Crank_Down_Left"
+    ],
+    "right_hip_pitch": [
+      "Right_Hip_Pitch"
+    ],
+    "right_hip_roll": [
+      "Right_Hip_Roll"
+    ],
+    "right_hip_yaw": [
+      "Right_Hip_Yaw"
+    ],
+    "right_knee": [
+      "Right_Knee_Pitch"
+    ],
+    "right_ankle_pitch": [
+      "Crank_Up_Right"
+    ],
+    "right_ankle_roll": [
+      "Crank_Down_Right"
+    ]
+  },
+  "sensor_count": 23
+}

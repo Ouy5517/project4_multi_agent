@@ -1,0 +1,63 @@
+render:
+  width: 1280
+  height: 720
+  fps: 30
+camera:
+  default: broadcast
+  alternatives:
+    - broadcast
+    - overview
+    - follow_ball
+playback:
+  slow: 0.85
+  normal: 1.15
+  fast: 1.35
+  realtime_factor: 1.15
+  viewer_fps: 60
+  video_fps: 30
+locomotion:
+  normal_speed_mps: 0.48
+  support_speed_mps: 0.55
+  fast_run_speed_mps: 0.65
+  fine_approach_speed_mps: 0.16
+  parking_speed_mps: 0.50
+  max_acceleration_mps2: 1.00
+  max_deceleration_mps2: 1.30
+  max_yaw_rate_deg_s: 90
+  max_yaw_acceleration_deg_s2: 180
+stage_pause:
+  ordinary_seconds: 0.30
+  important_event_seconds: 0.60
+  opening_seconds: 1.50
+  ending_seconds: 4.00
+demo:
+  target_duration_seconds: [35, 55]
+  max_duration_seconds: 60
+  opening_hold_seconds: 1.5
+  ending_hold_seconds: 4.0
+motion:
+  minimum_run_speed_mps: 0.40
+  maximum_yaw_step_deg: 4.0
+  maximum_acceleration_mps2: 3.5
+  minimum_robot_distance_m: 0.42
+visual:
+  show_ghosts: false
+  show_ghost_robot: false
+  show_pose_history: false
+  show_robot_trails: false
+  show_path_trail: false
+  show_contact_debug: false
+  visual_geom_group: 2
+  visual_contype: 0
+  visual_conaffinity: 0
+viewer:
+  width: 1280
+  height: 720
+  target_fps: 30
+  render_every_n_steps: auto
+  shadows: true
+  reflections: false
+  contact_points: false
+  contact_forces: false
+  joint_visualization: false
+  transparency: false

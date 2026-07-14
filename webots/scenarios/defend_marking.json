@@ -1,0 +1,33 @@
+{
+  "scenario_name": "defend_marking",
+  "timestamp": 4.0,
+  "ball": {"x": -2.1, "y": 0.2, "vx": 0.0, "vy": 0.0},
+  "robots": [
+    {
+      "robot_id": "T1_A",
+      "team": "blue",
+      "x": -0.4,
+      "y": 0.1,
+      "theta": 0.0,
+      "role": "attacker",
+      "has_ball": true
+    },
+    {
+      "robot_id": "T1_B",
+      "team": "blue",
+      "x": -1.5,
+      "y": -0.2,
+      "theta": 0.0,
+      "role": "support",
+      "has_ball": false
+    }
+  ],
+  "opponents": [
+    {"opponent_id": "OP_1", "x": -2.1, "y": 0.2},
+    {"opponent_id": "OP_2", "x": 1.4, "y": -1.0}
+  ],
+  "our_goal": {"x": -3.0, "y": 0.0},
+  "enemy_goal": {"x": 3.0, "y": 0.0},
+  "field_width": 6.0,
+  "field_height": 4.0
+}

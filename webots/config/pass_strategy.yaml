@@ -1,0 +1,23 @@
+field_margin: 0.15
+min_pass_distance: 0.7
+max_pass_distance: 5.5
+min_receive_clearance: 0.85
+hard_receive_clearance: 0.55
+line_static_clearance: 0.35
+opponent_max_speed: 1.6
+ball_base_speed: 2.5
+min_ball_speed: 1.2
+max_ball_speed: 4.0
+pass_time_margin: 0.10
+pass_distance_margin: 0.12
+dynamic_receive_horizon: 1.4
+receive_lead_scale: 0.8
+forward_receive_offset: 0.35
+allow_emergency_risky_pass: false
+weights:
+  distance: 0.16
+  safety: 0.25
+  space: 0.18
+  line: 0.24
+  advance: 0.10
+  attack: 0.07
