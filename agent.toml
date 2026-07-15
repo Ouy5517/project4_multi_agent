@@ -1,0 +1,11 @@
+id = "com.robocup.team3v3"
+version = "1.1.0"
+name = { en = "RoboCup3v3Agent", zh = "RoboCup3v3Agent" }
+logo = "/res/logo.png"
+description = "Booster Champion 3v3 match agent written in Python"
+entry = "src/main.py:SoccerSimAgent"
+debuggable = true
+
+[requirements]
+min_api_level = 10700
+models = [ "Booster T1", "Booster K1" ]

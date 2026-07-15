@@ -1,0 +1,13 @@
+[python]
+# pip_repos = ["https://pypi.tuna.tsinghua.edu.cn/simple"]
+obfuscation = false
+
+[python.dependencies]
+common = ["py_trees==2.4.0"]
+
+[platform]
+supports = ["sim_x86_64", "sim_aarch64", "real_jetson"]
+
+# [sign]
+# keystore_path = "${ENV:AGENT_SIGN_KEYSTORE}"
+# keystore_pass = "${ENV:AGENT_SIGN_KEYSTORE_PASSWD}"
