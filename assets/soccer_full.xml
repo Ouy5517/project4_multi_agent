@@ -1,0 +1,931 @@
+<mujoco model="soccer_full">
+  <!-- Official Booster T1 STL meshes from booster_assets -->
+  <!-- See docs/T1_ROOT_REPLACEMENT_STEPS.md step 6 -->
+  <compiler angle="radian" meshdir="../booster_assets/robots/T1/meshes" autolimits="true"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <visual>
+    <headlight diffuse="0.8 0.8 0.8" ambient="0.4 0.4 0.4"/>
+    <rgba haze="0.1 0.2 0.3 1"/>
+    <map fogstart="10" fogend="30"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient"
+             rgb1="0.4 0.6 0.85" rgb2="0.05 0.1 0.2" width="512" height="512"/>
+    <texture name="texplane" type="2d" builtin="checker"
+             rgb1="0.18 0.55 0.18" rgb2="0.12 0.42 0.12" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texrepeat="8 6" reflectance="0.08"/>
+    <material name="matgoal_post" rgba="1 1 1 0.9"/>
+    <material name="matgoal_net" rgba="1 1 1 0.2"/>
+    <material name="matline" rgba="1 1 1 0.7"/>
+    <mesh name="Trunk" file="Trunk.STL"/>
+    <mesh name="H1" file="H1.STL"/>
+    <mesh name="H2" file="H2.STL"/>
+    <mesh name="Logo" file="Logo.STL"/>
+    <mesh name="AL1" file="AL1.STL"/>
+    <mesh name="AL2" file="AL2.STL"/>
+    <mesh name="AL3" file="AL3.STL"/>
+    <mesh name="left_hand_link" file="left_hand_link.STL"/>
+    <mesh name="AR1" file="AR1.STL"/>
+    <mesh name="AR2" file="AR2.STL"/>
+    <mesh name="AR3" file="AR3.STL"/>
+    <mesh name="right_hand_link" file="right_hand_link.STL"/>
+    <mesh name="Waist" file="Waist.STL"/>
+    <mesh name="Hip_Pitch_Left" file="Hip_Pitch_Left.STL"/>
+    <mesh name="Hip_Roll_Left" file="Hip_Roll_Left.STL"/>
+    <mesh name="Hip_Yaw_Left" file="Hip_Yaw_Left.STL"/>
+    <mesh name="Shank_Left" file="Shank_Left.STL"/>
+    <mesh name="Ankle_Cross_Left" file="Ankle_Cross_Left.STL"/>
+    <mesh name="left_foot_link" file="left_foot_link.STL"/>
+    <mesh name="Hip_Pitch_Right" file="Hip_Pitch_Right.STL"/>
+    <mesh name="Hip_Roll_Right" file="Hip_Roll_Right.STL"/>
+    <mesh name="Hip_Yaw_Right" file="Hip_Yaw_Right.STL"/>
+    <mesh name="Shank_Right" file="Shank_Right.STL"/>
+    <mesh name="Ankle_Cross_Right" file="Ankle_Cross_Right.STL"/>
+    <mesh name="right_foot_link" file="right_foot_link.STL"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 12" dir="0 0 -1" diffuse="1 1 1" castshadow="true"/>
+    <light pos="5 3 8" dir="-0.5 -0.3 -1" diffuse="0.35 0.38 0.42"/>
+    <light pos="-5 -3 6" dir="0.5 0.3 -1" diffuse="0.25 0.25 0.28"/>
+
+    <geom name="floor" type="plane" size="6 5 0.1" material="matplane"/>
+
+    <geom name="line_top"    type="box" pos="0 3.0 0.006" size="4.6 0.025 0.005" material="matline" contype="0" conaffinity="0"/>
+    <geom name="line_bottom" type="box" pos="0 -3.0 0.006" size="4.6 0.025 0.005" material="matline" contype="0" conaffinity="0"/>
+    <geom name="line_left"   type="box" pos="-4.5 0 0.006" size="0.025 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
+    <geom name="line_right"  type="box" pos="4.5 0 0.006" size="0.025 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
+    <geom name="line_center" type="box" pos="0 0 0.006" size="0.02 3.0 0.005" material="matline" contype="0" conaffinity="0"/>
+    <geom name="circle_center" type="cylinder" pos="0 0 0.005" size="0.8 0.003" rgba="1 1 1 0.45" contype="0" conaffinity="0"/>
+
+    <geom name="goal_left_post_top"    type="box" pos="-4.5 1.0 0.55" size="0.04 0.04 0.55" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_left_post_bottom" type="box" pos="-4.5 -1.0 0.55" size="0.04 0.04 0.55" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_left_bar"         type="box" pos="-4.5 0 1.10" size="0.04 1.0 0.04" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_left_net"         type="box" pos="-4.8 0 0.55" size="0.01 1.0 0.55" material="matgoal_net" contype="0" conaffinity="0"/>
+    <geom name="goal_right_post_top"    type="box" pos="4.5 1.0 0.55" size="0.04 0.04 0.55" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_right_post_bottom" type="box" pos="4.5 -1.0 0.55" size="0.04 0.04 0.55" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_right_bar"         type="box" pos="4.5 0 1.10" size="0.04 1.0 0.04" material="matgoal_post" contype="0" conaffinity="0"/>
+    <geom name="goal_right_net"         type="box" pos="4.8 0 0.55" size="0.01 1.0 0.55" material="matgoal_net" contype="0" conaffinity="0"/>
+
+    <body name="ball" pos="0 0 0.055">
+      <freejoint name="ball_joint"/>
+      <geom name="ball_geom" type="sphere" size="0.055"
+            rgba="1 1 1 1" mass="0.045" friction="0.3 0.3 0.001"/>
+    </body>
+
+    <body name="pass_line_0" mocap="true" pos="0 0 0.05">
+      <geom name="pass_line_0_geom" type="box" size="0.5 0.015 0.005"
+            rgba="0.3 1.0 0.15 0" contype="0" conaffinity="0"/>
+    </body>
+    <body name="pass_line_1" mocap="true" pos="0 0 0.05">
+      <geom name="pass_line_1_geom" type="box" size="0.5 0.015 0.005"
+            rgba="0.3 1.0 0.15 0" contype="0" conaffinity="0"/>
+    </body>
+    <body name="pass_line_2" mocap="true" pos="0 0 0.05">
+      <geom name="pass_line_2_geom" type="box" size="0.5 0.015 0.005"
+            rgba="0.3 1.0 0.15 0" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Official Booster T1 STL  rid=0 -->
+    <body name="robot_0" mocap="true" pos="-1.2 0 0">
+      <geom name="robot_0_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_0_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_0_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_0_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_0_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_0_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_0_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_0_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_0_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_0_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_0_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_0_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_0_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_0_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_0_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_0_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_0_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_0_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_0_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_0_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_0_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_0_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_0_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_0_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_0_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_0_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_0_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_0_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_0_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_0_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_0_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_0_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_0_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_0_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_0_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_0_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_0_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_0_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_0_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_0_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_0_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_0_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_0_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_0_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_0_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_0_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_0_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_0_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+    <!-- Official Booster T1 STL  rid=1 -->
+    <body name="robot_1" mocap="true" pos="-2.2 1.4 0">
+      <geom name="robot_1_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_1_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_1_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_1_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_1_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_1_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_1_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_1_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_1_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_1_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_1_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_1_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_1_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_1_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_1_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_1_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_1_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_1_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_1_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_1_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_1_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_1_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_1_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_1_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_1_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_1_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_1_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_1_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_1_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_1_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_1_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_1_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_1_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_1_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_1_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_1_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_1_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_1_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_1_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_1_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_1_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_1_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_1_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_1_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+    <!-- Official Booster T1 STL  rid=2 -->
+    <body name="robot_2" mocap="true" pos="-2.6 0 0">
+      <geom name="robot_2_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_2_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_2_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_2_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_2_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_2_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_2_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_2_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_2_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_2_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_2_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_2_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_2_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_2_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_2_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_2_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_2_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_2_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_2_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_2_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_2_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_2_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_2_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_2_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_2_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_2_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_2_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_2_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_2_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_2_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_2_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_2_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_2_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_2_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.15 0.40 0.95 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_2_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_2_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_2_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_2_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_2_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_2_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_2_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_2_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_2_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_2_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+    <!-- Official Booster T1 STL  rid=10 -->
+    <body name="robot_10" mocap="true" pos="1.2 0 0">
+      <geom name="robot_10_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_10_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_10_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_10_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_10_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_10_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_10_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_10_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_10_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_10_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_10_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_10_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_10_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_10_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_10_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_10_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_10_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_10_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_10_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_10_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_10_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_10_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_10_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_10_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_10_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_10_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_10_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_10_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_10_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_10_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_10_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_10_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_10_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_10_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_10_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_10_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_10_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_10_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_10_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_10_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_10_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_10_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_10_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_10_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_10_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_10_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_10_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_10_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+    <!-- Official Booster T1 STL  rid=11 -->
+    <body name="robot_11" mocap="true" pos="2.2 -1.4 0">
+      <geom name="robot_11_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_11_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_11_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_11_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_11_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_11_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_11_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_11_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_11_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_11_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_11_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_11_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_11_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_11_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_11_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_11_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_11_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_11_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_11_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_11_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_11_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_11_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_11_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_11_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_11_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_11_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_11_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_11_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_11_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_11_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_11_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_11_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_11_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_11_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_11_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_11_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_11_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_11_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_11_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_11_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_11_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_11_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_11_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_11_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_11_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_11_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_11_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_11_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+    <!-- Official Booster T1 STL  rid=12 -->
+    <body name="robot_12" mocap="true" pos="2.6 0 0">
+      <geom name="robot_12_ring" type="cylinder" size="0.22 0.004" pos="0 0 0.003"
+            rgba="0.5 0.5 0.5 0.7" contype="0" conaffinity="0"/>
+
+      <body name="robot_12_Trunk" pos="0 0 0.68">
+        <inertial pos="0.055 0 0.105" mass="11.7" diaginertia="0.23399999999999999 0.23399999999999999 0.23399999999999999"/>
+        <geom type="mesh" mesh="Trunk" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+        <geom type="mesh" mesh="Logo" rgba="0.1 0.1 0.1 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+        <!-- Head -->
+        <body name="robot_12_H1" pos="0.0625 0 0.243">
+          <inertial pos="0 0 0" mass="0.44" diaginertia="0.0088 0.0088 0.0088"/>
+          <joint name="robot_12_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="H1" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_12_H2" pos="0 0 0.06185">
+            <inertial pos="0 0 0" mass="0.63" diaginertia="0.0126 0.0126 0.0126"/>
+            <joint name="robot_12_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1"/>
+            <geom type="mesh" mesh="H2" rgba="0.55 0.55 0.55 1" contype="0" conaffinity="0" group="1" density="0"/>
+          </body>
+        </body>
+
+        <!-- Left Arm: l_shoulder = Shoulder_Pitch -->
+        <body name="robot_12_AL1" pos="0.0575 0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_12_l_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AL1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_12_AL2" pos="0 0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_12_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1"/>
+            <geom type="mesh" mesh="AL2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_12_AL3" pos="0.00025 0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_12_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AL3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_12_left_hand" pos="0 0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_12_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-2.44 0" damping="1"/>
+                <geom type="mesh" mesh="left_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Right Arm: r_shoulder -->
+        <body name="robot_12_AR1" pos="0.0575 -0.1063 0.219">
+          <inertial pos="0 0 0" mass="0.53" diaginertia="0.0106 0.0106 0.0106"/>
+          <joint name="robot_12_r_shoulder" type="hinge" axis="0 1 0" range="-3.31 1.22" damping="1"/>
+          <geom type="mesh" mesh="AR1" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+          <body name="robot_12_AR2" pos="0 -0.047 0">
+            <inertial pos="0 0 0" mass="0.16" diaginertia="0.0032 0.0032 0.0032"/>
+            <joint name="robot_12_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1"/>
+            <geom type="mesh" mesh="AR2" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_12_AR3" pos="0.00025 -0.0605 0">
+              <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+              <joint name="robot_12_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <geom type="mesh" mesh="AR3" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_12_right_hand" pos="0 -0.1471 0">
+                <inertial pos="0 0 0" mass="0.33" diaginertia="0.006600000000000001 0.006600000000000001 0.006600000000000001"/>
+                <joint name="robot_12_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="0 2.44" damping="1"/>
+                <geom type="mesh" mesh="right_hand_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              </body>
+            </body>
+          </body>
+        </body>
+
+        <!-- Waist + Legs -->
+        <body name="robot_12_Waist" pos="0.0625 0 -0.1155">
+          <inertial pos="0 0 0" mass="2.58" diaginertia="0.0516 0.0516 0.0516"/>
+          <joint name="robot_12_Waist" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1"/>
+          <geom type="mesh" mesh="Waist" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+
+          <!-- Left Leg: l_hip / l_knee -->
+          <body name="robot_12_Hip_Pitch_Left" pos="0 0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_12_l_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Left" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_12_Hip_Roll_Left" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_12_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.2 1.57" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_12_Hip_Yaw_Left" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_12_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_12_Shank_Left" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_12_l_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_12_Ankle_Cross_Left" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_12_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Left" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_12_left_foot" pos="0 0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_12_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="left_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+
+          <!-- Right Leg: r_hip / r_knee (kick leg) -->
+          <body name="robot_12_Hip_Pitch_Right" pos="0 -0.106 0">
+            <inertial pos="0 0 0" mass="1.02" diaginertia="0.0204 0.0204 0.0204"/>
+            <joint name="robot_12_r_hip" type="hinge" axis="0 1 0" range="-3.0 2.2" damping="1"/>
+            <geom type="mesh" mesh="Hip_Pitch_Right" rgba="0.95 0.70 0.12 1" contype="0" conaffinity="0" group="1" density="0"/>
+            <body name="robot_12_Hip_Roll_Right" pos="0 0 -0.02">
+              <inertial pos="0 0 0" mass="0.39" diaginertia="0.0078000000000000005 0.0078000000000000005 0.0078000000000000005"/>
+              <joint name="robot_12_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-1.57 0.2" damping="1"/>
+              <geom type="mesh" mesh="Hip_Roll_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+              <body name="robot_12_Hip_Yaw_Right" pos="0 0 -0.081854">
+                <inertial pos="0 0 0" mass="2.17" diaginertia="0.0434 0.0434 0.0434"/>
+                <joint name="robot_12_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+                <geom type="mesh" mesh="Hip_Yaw_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                <body name="robot_12_Shank_Right" pos="-0.014 0 -0.134">
+                  <inertial pos="0 0 0" mass="1.82" diaginertia="0.0364 0.0364 0.0364"/>
+                  <joint name="robot_12_r_knee" type="hinge" axis="0 1 0" range="-0.05 2.18" damping="1"/>
+                  <geom type="mesh" mesh="Shank_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                  <body name="robot_12_Ankle_Cross_Right" pos="0 0 -0.28">
+                    <inertial pos="0 0 0" mass="0.07" diaginertia="0.0014000000000000002 0.0014000000000000002 0.0014000000000000002"/>
+                    <joint name="robot_12_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.87 0.35" damping="1"/>
+                    <geom type="mesh" mesh="Ankle_Cross_Right" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    <body name="robot_12_right_foot" pos="0 -0.00025 -0.012">
+                      <inertial pos="0 0 0" mass="0.69" diaginertia="0.0138 0.0138 0.0138"/>
+                      <joint name="robot_12_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.44 0.44" damping="1"/>
+                      <geom type="mesh" mesh="right_foot_link" rgba="0.35 0.35 0.35 1" contype="0" conaffinity="0" group="1" density="0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+  </worldbody>
+</mujoco>

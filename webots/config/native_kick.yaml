@@ -1,0 +1,85 @@
+hold_stand_seconds: 10.0
+initial_hold_seconds: 5.0
+max_pushes: 3
+kick_success_threshold: 0.05
+dribble_success_threshold: 0.15
+fallen_z_threshold: 0.35
+ball_settle_seconds: 0.7
+joint_velocity_limit: 0.55
+
+assisted:
+  hold_stand_min_seconds: 2.0
+  hold_stand_timeout_seconds: 8.0
+  max_joint_error_rad: 0.08
+  max_joint_velocity_rad_s: 0.20
+  require_free_standing_height: false
+  require_roll_pitch_balance: false
+  skip_weight_shift: true
+  contact_tolerance: 0.05
+  foot_contact_radius: 0.08
+  ball_radius: 0.11
+  desired_surface_gap_m: 0.04
+  max_surface_gap_m: 0.07
+  max_lateral_offset_m: 0.04
+  max_vertical_offset_m: 0.16
+  trajectory_tolerance_m: 0.04
+  calibration_min_confidence: 0.0005
+  ground_margin_m: 0.50
+  support_check_seconds: 5.0
+  support_check_sample_seconds: 0.1
+  support_check_max_ball_z_drop_m: 0.005
+  support_check_max_ball_xy_drift_m: 0.005
+  support_check_final_speed_m_s: 0.02
+
+ground_support:
+  ground_def: green_field
+  collision_type: Box
+  top_z: 0.0
+  x_min: -3.5
+  x_max: 3.5
+  y_min: -2.5
+  y_max: 2.5
+  size_x: 7.0
+  size_y: 5.0
+  size_z: 0.01
+
+foot_geometry:
+  forward_half_length_m: 0.112435
+  lateral_half_width_m: 0.05
+  vertical_half_height_m: 0.0155
+  forward_axis_index: 0
+  forward_axis_sign: 1
+  lateral_axis_index: 1
+  lateral_axis_sign: 1
+  vertical_axis_index: 2
+  vertical_axis_sign: 1
+
+levels:
+  - name: level_1
+    hip_pitch: 0.08
+    knee: -0.06
+    ankle_pitch: -0.03
+    duration: 0.75
+  - name: level_2
+    hip_pitch: 0.12
+    knee: -0.09
+    ankle_pitch: -0.04
+    duration: 0.75
+  - name: level_3
+    hip_pitch: 0.18
+    knee: -0.12
+    ankle_pitch: -0.05
+    duration: 0.85
+
+states:
+  INITIALIZE: 0.5
+  HOLD_STAND: 10.0
+  PREPARE: 1.0
+  SHIFT_WEIGHT: 1.2
+  LIFT_FOOT: 0.8
+  SWING_FORWARD: 0.8
+  CONTACT_HOLD: 0.15
+  RETRACT: 0.7
+  RECOVER: 1.0
+  VERIFY_BALL: 0.4
+  DRIBBLE_REPOSITION: 0.5

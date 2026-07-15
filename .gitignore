@@ -1,0 +1,51 @@
+__pycache__/
+.gitmeta/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+outputs/
+*.csv
+*.pdf
+*.gif
+*.mp4
+assets/meshes/
+
+
+# Booster Webots runtime outputs
+webots/logs/
+webots/results/
+webots/backups/
+webots/runs/
+webots/checkpoints/
+webots/dist/
+webots/outputs/
+
+# Python environments and caches
+webots/.venv/
+webots/venv/
+webots/env/
+webots/coop_env/
+webots/**/__pycache__/
+webots/.pytest_cache/
+webots/**/*.py[cod]
+
+# Generated runtime files
+webots/**/*.log
+webots/**/*.tmp
+webots/**/*.run
+webots/**/*.mp4
+webots/**/*.avi
+webots/**/*.zip
+webots/**/*.tar.gz
+webots/**/*.sha256
+webots/**/MUJOCO_LOG.TXT
+webots/**/joint_commands.jsonl
+
+# Webots local project state
+webots/worlds/*.wbproj
+
+# IDE
+webots/.vscode/
+webots/.idea/
+

@@ -1,0 +1,805 @@
+<mujoco model="T1_2v2_assisted_physical_soccer_visual_v2">
+  <compiler angle="radian" autolimits="true" meshdir="../../../booster_assets/robots/T1/meshes"/>
+  <option timestep="0.005" gravity="0 0 -9.81" integrator="implicitfast"/>
+  <default>
+    <joint armature="0.03" damping="3.0"/>
+    <geom density="320"/>
+  </default>
+  <size njmax="300" nconmax="120"/>
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+    <quality shadowsize="2048"/>
+  </visual>
+  <asset>
+    <texture name="field_tex" type="2d" builtin="checker" rgb1="0.02 0.60 0.17" rgb2="0.03 0.50 0.13" width="512" height="512"/>
+    <material name="field_mat" texture="field_tex" texrepeat="8 6" texuniform="true" reflectance="0.08"/>
+    <material name="line_mat" rgba="1 1 1 1"/>
+    <material name="ball_mat" rgba="0.96 0.96 0.90 1"/>
+    <mesh name="T1_Trunk" file="Trunk.STL"/>
+    <mesh name="T1_H1" file="H1.STL"/>
+    <mesh name="T1_H2" file="H2.STL"/>
+    <mesh name="T1_Logo" file="Logo.STL"/>
+    <mesh name="T1_AL1" file="AL1.STL"/>
+    <mesh name="T1_AL2" file="AL2.STL"/>
+    <mesh name="T1_AL3" file="AL3.STL"/>
+    <mesh name="T1_left_hand_link" file="left_hand_link.STL"/>
+    <mesh name="T1_AR1" file="AR1.STL"/>
+    <mesh name="T1_AR2" file="AR2.STL"/>
+    <mesh name="T1_AR3" file="AR3.STL"/>
+    <mesh name="T1_right_hand_link" file="right_hand_link.STL"/>
+    <mesh name="T1_Waist" file="Waist.STL"/>
+    <mesh name="T1_Hip_Pitch_Left" file="Hip_Pitch_Left.STL"/>
+    <mesh name="T1_Hip_Roll_Left" file="Hip_Roll_Left.STL"/>
+    <mesh name="T1_Hip_Yaw_Left" file="Hip_Yaw_Left.STL"/>
+    <mesh name="T1_Shank_Left" file="Shank_Left.STL"/>
+    <mesh name="T1_Ankle_Cross_Left" file="Ankle_Cross_Left.STL"/>
+    <mesh name="T1_left_foot_link" file="left_foot_link.STL"/>
+    <mesh name="T1_Hip_Pitch_Right" file="Hip_Pitch_Right.STL"/>
+    <mesh name="T1_Hip_Roll_Right" file="Hip_Roll_Right.STL"/>
+    <mesh name="T1_Hip_Yaw_Right" file="Hip_Yaw_Right.STL"/>
+    <mesh name="T1_Shank_Right" file="Shank_Right.STL"/>
+    <mesh name="T1_Ankle_Cross_Right" file="Ankle_Cross_Right.STL"/>
+    <mesh name="T1_right_foot_link" file="right_foot_link.STL"/>
+  </asset>
+  <worldbody>
+    <light name="sun" directional="true" pos="0 -4 6" dir="0.2 0.35 -1" diffuse="0.85 0.85 0.8"/>
+
+    <light name="visual_v2_fill_left" directional="true" pos="-2 3 5" dir="0.35 -0.25 -1" diffuse="0.42 0.45 0.50"/>
+    <light name="visual_v2_fill_right" directional="true" pos="2 -3 5" dir="-0.35 0.25 -1" diffuse="0.38 0.40 0.46"/>
+
+    <camera name="overview" pos="0 -5.3 4.2" xyaxes="1 0 0 0 0.62 0.78" fovy="48"/>
+
+    <camera name="broadcast" pos="0 -6.4 3.25" xyaxes="1 0 0 0 0.47 0.88" fovy="42"/>
+    <camera name="follow_ball" pos="-1.6 -4.0 2.3" xyaxes="1 0 0 0 0.50 0.86" fovy="45"/>
+    <camera name="broadcast_wide" pos="0 -7.2 4.25" xyaxes="1 0 0 0 0.54 0.84" fovy="46"/>
+    <camera name="broadcast_action" pos="0.15 -5.65 3.15" xyaxes="1 0 0 0 0.50 0.86" fovy="39"/>
+
+    <geom name="ground" type="plane" pos="0 0 0" size="4 3 0.1" material="field_mat" contype="1" conaffinity="2" friction="1.0 0.02 0.002"/>
+    <geom name="line_left" type="box" pos="0 -2.5 0.006" size="3.5 0.018 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="line_right" type="box" pos="0 2.5 0.006" size="3.5 0.018 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="line_blue" type="box" pos="-3.5 0 0.006" size="0.018 2.5 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="line_red" type="box" pos="3.5 0 0.006" size="0.018 2.5 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="line_mid" type="box" pos="0 0 0.007" size="0.012 2.5 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_0" type="box" pos="0.360 0.000 0.012" euler="0 0 0.000" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_1" type="box" pos="0.255 0.255 0.012" euler="0 0 0.785" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_2" type="box" pos="0.000 0.360 0.012" euler="0 0 1.571" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_3" type="box" pos="-0.255 0.255 0.012" euler="0 0 2.356" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_4" type="box" pos="-0.360 0.000 0.012" euler="0 0 3.142" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_5" type="box" pos="-0.255 -0.255 0.012" euler="0 0 3.927" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_6" type="box" pos="0.000 -0.360 0.012" euler="0 0 4.712" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="center_circle_7" type="box" pos="0.255 -0.255 0.012" euler="0 0 5.498" size="0.120 0.010 0.006" material="line_mat" contype="0" conaffinity="0"/>
+    <geom name="field_wall_blue" type="box" pos="-3.58 0 0.12" size="0.03 2.55 0.12" rgba="1 1 1 0.08" contype="1" conaffinity="2"/>
+    <geom name="field_wall_red" type="box" pos="3.58 0 0.12" size="0.03 2.55 0.12" rgba="1 1 1 0.08" contype="1" conaffinity="2"/>
+    <geom name="field_wall_left" type="box" pos="0 -2.58 0.12" size="3.58 0.03 0.12" rgba="1 1 1 0.08" contype="1" conaffinity="2"/>
+    <geom name="field_wall_right" type="box" pos="0 2.58 0.12" size="3.58 0.03 0.12" rgba="1 1 1 0.08" contype="1" conaffinity="2"/>
+    <geom name="BLUE_GOAL" type="box" pos="-3.52 0 0.42" size="0.03 0.48 0.42" rgba="0.0 0.12 1 0.35" contype="0" conaffinity="0"/>
+    <geom name="RED_GOAL" type="box" pos="3.52 0 0.42" size="0.03 0.48 0.42" rgba="1 0.05 0.02 0.35" contype="0" conaffinity="0"/>
+
+    <geom name="visual_v2_surround_north" type="box" pos="0 2.88 0.003" size="4.15 0.30 0.004" rgba="0.015 0.025 0.045 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_surround_south" type="box" pos="0 -2.88 0.003" size="4.15 0.30 0.004" rgba="0.015 0.025 0.045 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_surround_west" type="box" pos="-3.88 0 0.003" size="0.30 2.55 0.004" rgba="0.015 0.025 0.045 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_surround_east" type="box" pos="3.88 0 0.003" size="0.30 2.55 0.004" rgba="0.015 0.025 0.045 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_center_spot" type="cylinder" pos="0 0 0.016" size="0.035 0.004" rgba="1 1 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_penalty_back" type="box" pos="-2.82 0 0.014" size="0.012 0.82 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_penalty_top" type="box" pos="-3.16 0.82 0.014" size="0.34 0.012 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_penalty_bottom" type="box" pos="-3.16 -0.82 0.014" size="0.34 0.012 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_penalty_back" type="box" pos="2.82 0 0.014" size="0.012 0.82 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_penalty_top" type="box" pos="3.16 0.82 0.014" size="0.34 0.012 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_penalty_bottom" type="box" pos="3.16 -0.82 0.014" size="0.34 0.012 0.005" material="line_mat" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_goal_left_post" type="cylinder" pos="-3.55 0.50 0.33" size="0.025 0.33" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_goal_right_post" type="cylinder" pos="-3.55 -0.50 0.33" size="0.025 0.33" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_goal_crossbar" type="capsule" fromto="-3.55 -0.50 0.66 -3.55 0.50 0.66" size="0.025" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_blue_goal_net_1" type="box" pos="-3.61 0 0.33" size="0.006 0.50 0.31" rgba="0.45 0.60 1 0.35" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_goal_left_post" type="cylinder" pos="3.55 0.50 0.33" size="0.025 0.33" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_goal_right_post" type="cylinder" pos="3.55 -0.50 0.33" size="0.025 0.33" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_goal_crossbar" type="capsule" fromto="3.55 -0.50 0.66 3.55 0.50 0.66" size="0.025" rgba="0.94 0.96 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+    <geom name="visual_v2_red_goal_net_1" type="box" pos="3.61 0 0.33" size="0.006 0.50 0.31" rgba="1 0.45 0.38 0.35" contype="0" conaffinity="0" group="2" density="0"/>
+
+    <body name="soccer_ball" pos="-1.35 -0.05 0.115">
+      <joint name="soccer_ball_free" type="free" damping="0.04"/>
+      <geom name="soccer_ball_geom" type="sphere" size="0.11" mass="0.43" material="ball_mat" contype="2" conaffinity="5" friction="1.0 0.05 0.025" solref="0.006 1.0" solimp="0.9 0.95 0.001"/>
+    </body>
+
+    <body name="T1_BLUE_1_base" pos="-2.3000 -0.4500 0">
+      <joint name="T1_BLUE_1_base_x" type="slide" axis="1 0 0" limited="true" range="-4 4" damping="45"/>
+      <joint name="T1_BLUE_1_base_y" type="slide" axis="0 1 0" limited="true" range="-3 3" damping="45"/>
+      <joint name="T1_BLUE_1_base_yaw" type="hinge" axis="0 0 1" limited="true" range="-7 7" damping="20"/>
+      <body name="T1_BLUE_1_torso" pos="0 0 0.98">
+        <inertial pos="0 0 0" mass="18" diaginertia="0.32 0.28 0.18"/>
+        <geom name="T1_BLUE_1_torso_geom" type="box" size="0.13 0.09 0.18" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
+
+        <geom name="T1_BLUE_1_mesh_Trunk" type="mesh" mesh="T1_Trunk" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+        <geom name="T1_BLUE_1_mesh_Logo" type="mesh" mesh="T1_Logo" rgba="0.05 0.05 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+
+            <geom name="T1_BLUE_1_visual_torso_shell" type="ellipsoid" size="0.155 0.105 0.195" pos="0.015 0 0.015" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_chest_panel" type="box" size="0.014 0.075 0.085" pos="0.155 0 0.045" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_pelvis_shell" type="ellipsoid" size="0.125 0.09 0.06" pos="0 0 -0.245" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_left_shoulder_shell" type="sphere" size="0.055" pos="0.035 0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_right_shoulder_shell" type="sphere" size="0.055" pos="0.035 -0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_head_neck" type="capsule" fromto="0.02 0 0.222 0.02 0 0.275" size="0.035" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_head_shell" type="ellipsoid" size="0.088 0.074 0.083" pos="0.035 0 0.325" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_visor" type="box" size="0.012 0.058 0.020" pos="0.115 0 0.333" rgba="0.01 0.025 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_left_ear_panel" type="sphere" size="0.025" pos="0.035 0.071 0.328" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_right_ear_panel" type="sphere" size="0.025" pos="0.035 -0.071 0.328" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+        <body name="T1_BLUE_1_head_mount" pos="0.03 0 0.24">
+          <joint name="BLUE1_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1.5"/>
+          <inertial pos="0 0 0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_1_mesh_H1" type="mesh" mesh="T1_H1" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_1_head" pos="0 0 0.06">
+            <joint name="BLUE1_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1.5"/>
+            <geom name="T1_BLUE_1_head_geom" type="sphere" size="0.075" rgba="0.9 0.9 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_1_mesh_H2" type="mesh" mesh="T1_H2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          </body>
+        </body>
+        <body name="T1_BLUE_1_waist" pos="0 0 -0.22">
+          <joint name="BLUE1_Waist" type="hinge" axis="0 0 1" range="-0.6 0.6" damping="2"/>
+          <geom name="T1_BLUE_1_waist_geom" type="box" size="0.11 0.085 0.055" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+          <geom name="T1_BLUE_1_mesh_Waist" type="mesh" mesh="T1_Waist" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_1_left_hip_pitch" pos="0 0.072 -0.055">
+            <joint name="BLUE1_Left_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_BLUE_1_mesh_Hip_Pitch_Left" type="mesh" mesh="T1_Hip_Pitch_Left" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_1_left_hip_roll" pos="0 0 -0.02">
+              <joint name="BLUE1_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_BLUE_1_mesh_Hip_Roll_Left" type="mesh" mesh="T1_Hip_Roll_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_BLUE_1_left_hip_yaw" pos="0 0 -0.02">
+                <joint name="BLUE1_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_BLUE_1_left_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_BLUE_1_mesh_Hip_Yaw_Left" type="mesh" mesh="T1_Hip_Yaw_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_BLUE_1_visual_left_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_BLUE_1_left_shin" pos="0 0 -0.28">
+                  <joint name="BLUE1_Left_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_BLUE_1_left_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_BLUE_1_mesh_Shank_Left" type="mesh" mesh="T1_Shank_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_1_visual_left_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_1_visual_left_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_BLUE_1_left_ankle" pos="0 0 -0.25">
+                    <joint name="BLUE1_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_BLUE_1_mesh_Ankle_Cross_Left" type="mesh" mesh="T1_Ankle_Cross_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_BLUE_1_left_foot" pos="0.055 0 -0.035">
+                      <joint name="BLUE1_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_BLUE_1_LEFT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_BLUE_1_mesh_left_foot_link" type="mesh" mesh="T1_left_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_BLUE_1_visual_left_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="BLUE1_LEFT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+          <body name="T1_BLUE_1_right_hip_pitch" pos="0 -0.072 -0.055">
+            <joint name="BLUE1_Right_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_BLUE_1_mesh_Hip_Pitch_Right" type="mesh" mesh="T1_Hip_Pitch_Right" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_1_right_hip_roll" pos="0 0 -0.02">
+              <joint name="BLUE1_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_BLUE_1_mesh_Hip_Roll_Right" type="mesh" mesh="T1_Hip_Roll_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_BLUE_1_right_hip_yaw" pos="0 0 -0.02">
+                <joint name="BLUE1_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_BLUE_1_right_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_BLUE_1_mesh_Hip_Yaw_Right" type="mesh" mesh="T1_Hip_Yaw_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_BLUE_1_visual_right_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_BLUE_1_right_shin" pos="0 0 -0.28">
+                  <joint name="BLUE1_Right_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_BLUE_1_right_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_BLUE_1_mesh_Shank_Right" type="mesh" mesh="T1_Shank_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_1_visual_right_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_1_visual_right_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_BLUE_1_right_ankle" pos="0 0 -0.25">
+                    <joint name="BLUE1_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_BLUE_1_mesh_Ankle_Cross_Right" type="mesh" mesh="T1_Ankle_Cross_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_BLUE_1_right_foot" pos="0.055 0 -0.035">
+                      <joint name="BLUE1_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_BLUE_1_RIGHT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_BLUE_1_mesh_right_foot_link" type="mesh" mesh="T1_right_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_BLUE_1_visual_right_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="BLUE1_RIGHT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+        <body name="T1_BLUE_1_left_shoulder" pos="0.02 0.125 0.15">
+          <joint name="BLUE1_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_1_mesh_AL1" type="mesh" mesh="T1_AL1" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_1_left_upper_arm" pos="0 0.03 -0.08">
+            <joint name="BLUE1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
+            <geom name="T1_BLUE_1_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_1_mesh_AL2" type="mesh" mesh="T1_AL2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_1_left_lower_arm" pos="0 0 -0.16">
+              <joint name="BLUE1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="BLUE1_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_BLUE_1_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_BLUE_1_mesh_AL3" type="mesh" mesh="T1_AL3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_1_mesh_left_hand_link" type="mesh" mesh="T1_left_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_1_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+        <body name="T1_BLUE_1_right_shoulder" pos="0.02 -0.125 0.15">
+          <joint name="BLUE1_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_1_mesh_AR1" type="mesh" mesh="T1_AR1" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_1_right_upper_arm" pos="0 -0.03 -0.08">
+            <joint name="BLUE1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
+            <geom name="T1_BLUE_1_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.04 0.12 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_1_mesh_AR2" type="mesh" mesh="T1_AR2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_1_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_1_right_lower_arm" pos="0 0 -0.16">
+              <joint name="BLUE1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="BLUE1_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_BLUE_1_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_BLUE_1_mesh_AR3" type="mesh" mesh="T1_AR3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_1_mesh_right_hand_link" type="mesh" mesh="T1_right_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_1_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+    <body name="T1_BLUE_2_base" pos="-2.1000 1.0000 0">
+      <joint name="T1_BLUE_2_base_x" type="slide" axis="1 0 0" limited="true" range="-4 4" damping="45"/>
+      <joint name="T1_BLUE_2_base_y" type="slide" axis="0 1 0" limited="true" range="-3 3" damping="45"/>
+      <joint name="T1_BLUE_2_base_yaw" type="hinge" axis="0 0 1" limited="true" range="-7 7" damping="20"/>
+      <body name="T1_BLUE_2_torso" pos="0 0 0.98">
+        <inertial pos="0 0 0" mass="18" diaginertia="0.32 0.28 0.18"/>
+        <geom name="T1_BLUE_2_torso_geom" type="box" size="0.13 0.09 0.18" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
+
+        <geom name="T1_BLUE_2_mesh_Trunk" type="mesh" mesh="T1_Trunk" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+        <geom name="T1_BLUE_2_mesh_Logo" type="mesh" mesh="T1_Logo" rgba="0.05 0.05 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+
+            <geom name="T1_BLUE_2_visual_torso_shell" type="ellipsoid" size="0.155 0.105 0.195" pos="0.015 0 0.015" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_chest_panel" type="box" size="0.014 0.075 0.085" pos="0.155 0 0.045" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_pelvis_shell" type="ellipsoid" size="0.125 0.09 0.06" pos="0 0 -0.245" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_left_shoulder_shell" type="sphere" size="0.055" pos="0.035 0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_right_shoulder_shell" type="sphere" size="0.055" pos="0.035 -0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_head_neck" type="capsule" fromto="0.02 0 0.222 0.02 0 0.275" size="0.035" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_head_shell" type="ellipsoid" size="0.088 0.074 0.083" pos="0.035 0 0.325" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_visor" type="box" size="0.012 0.058 0.020" pos="0.115 0 0.333" rgba="0.01 0.025 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_left_ear_panel" type="sphere" size="0.025" pos="0.035 0.071 0.328" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_right_ear_panel" type="sphere" size="0.025" pos="0.035 -0.071 0.328" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+        <body name="T1_BLUE_2_head_mount" pos="0.03 0 0.24">
+          <joint name="BLUE2_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1.5"/>
+          <inertial pos="0 0 0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_2_mesh_H1" type="mesh" mesh="T1_H1" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_2_head" pos="0 0 0.06">
+            <joint name="BLUE2_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1.5"/>
+            <geom name="T1_BLUE_2_head_geom" type="sphere" size="0.075" rgba="0.9 0.9 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_2_mesh_H2" type="mesh" mesh="T1_H2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          </body>
+        </body>
+        <body name="T1_BLUE_2_waist" pos="0 0 -0.22">
+          <joint name="BLUE2_Waist" type="hinge" axis="0 0 1" range="-0.6 0.6" damping="2"/>
+          <geom name="T1_BLUE_2_waist_geom" type="box" size="0.11 0.085 0.055" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+          <geom name="T1_BLUE_2_mesh_Waist" type="mesh" mesh="T1_Waist" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_2_left_hip_pitch" pos="0 0.072 -0.055">
+            <joint name="BLUE2_Left_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_BLUE_2_mesh_Hip_Pitch_Left" type="mesh" mesh="T1_Hip_Pitch_Left" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_2_left_hip_roll" pos="0 0 -0.02">
+              <joint name="BLUE2_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_BLUE_2_mesh_Hip_Roll_Left" type="mesh" mesh="T1_Hip_Roll_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_BLUE_2_left_hip_yaw" pos="0 0 -0.02">
+                <joint name="BLUE2_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_BLUE_2_left_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_BLUE_2_mesh_Hip_Yaw_Left" type="mesh" mesh="T1_Hip_Yaw_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_BLUE_2_visual_left_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_BLUE_2_left_shin" pos="0 0 -0.28">
+                  <joint name="BLUE2_Left_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_BLUE_2_left_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_BLUE_2_mesh_Shank_Left" type="mesh" mesh="T1_Shank_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_2_visual_left_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_2_visual_left_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_BLUE_2_left_ankle" pos="0 0 -0.25">
+                    <joint name="BLUE2_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_BLUE_2_mesh_Ankle_Cross_Left" type="mesh" mesh="T1_Ankle_Cross_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_BLUE_2_left_foot" pos="0.055 0 -0.035">
+                      <joint name="BLUE2_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_BLUE_2_LEFT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_BLUE_2_mesh_left_foot_link" type="mesh" mesh="T1_left_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_BLUE_2_visual_left_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="BLUE2_LEFT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+          <body name="T1_BLUE_2_right_hip_pitch" pos="0 -0.072 -0.055">
+            <joint name="BLUE2_Right_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_BLUE_2_mesh_Hip_Pitch_Right" type="mesh" mesh="T1_Hip_Pitch_Right" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_2_right_hip_roll" pos="0 0 -0.02">
+              <joint name="BLUE2_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_BLUE_2_mesh_Hip_Roll_Right" type="mesh" mesh="T1_Hip_Roll_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_BLUE_2_right_hip_yaw" pos="0 0 -0.02">
+                <joint name="BLUE2_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_BLUE_2_right_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_BLUE_2_mesh_Hip_Yaw_Right" type="mesh" mesh="T1_Hip_Yaw_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_BLUE_2_visual_right_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_BLUE_2_right_shin" pos="0 0 -0.28">
+                  <joint name="BLUE2_Right_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_BLUE_2_right_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_BLUE_2_mesh_Shank_Right" type="mesh" mesh="T1_Shank_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_2_visual_right_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_BLUE_2_visual_right_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_BLUE_2_right_ankle" pos="0 0 -0.25">
+                    <joint name="BLUE2_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_BLUE_2_mesh_Ankle_Cross_Right" type="mesh" mesh="T1_Ankle_Cross_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_BLUE_2_right_foot" pos="0.055 0 -0.035">
+                      <joint name="BLUE2_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_BLUE_2_RIGHT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_BLUE_2_mesh_right_foot_link" type="mesh" mesh="T1_right_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_BLUE_2_visual_right_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="BLUE2_RIGHT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+        <body name="T1_BLUE_2_left_shoulder" pos="0.02 0.125 0.15">
+          <joint name="BLUE2_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_2_mesh_AL1" type="mesh" mesh="T1_AL1" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_2_left_upper_arm" pos="0 0.03 -0.08">
+            <joint name="BLUE2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
+            <geom name="T1_BLUE_2_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_2_mesh_AL2" type="mesh" mesh="T1_AL2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_2_left_lower_arm" pos="0 0 -0.16">
+              <joint name="BLUE2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="BLUE2_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_BLUE_2_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_BLUE_2_mesh_AL3" type="mesh" mesh="T1_AL3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_2_mesh_left_hand_link" type="mesh" mesh="T1_left_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_2_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+        <body name="T1_BLUE_2_right_shoulder" pos="0.02 -0.125 0.15">
+          <joint name="BLUE2_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_BLUE_2_mesh_AR1" type="mesh" mesh="T1_AR1" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_BLUE_2_right_upper_arm" pos="0 -0.03 -0.08">
+            <joint name="BLUE2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
+            <geom name="T1_BLUE_2_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.18 0.62 1 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_BLUE_2_mesh_AR2" type="mesh" mesh="T1_AR2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_BLUE_2_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_BLUE_2_right_lower_arm" pos="0 0 -0.16">
+              <joint name="BLUE2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="BLUE2_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_BLUE_2_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_BLUE_2_mesh_AR3" type="mesh" mesh="T1_AR3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_2_mesh_right_hand_link" type="mesh" mesh="T1_right_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_BLUE_2_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+    <body name="T1_RED_1_base" pos="2.2500 -0.6500 0">
+      <joint name="T1_RED_1_base_x" type="slide" axis="1 0 0" limited="true" range="-4 4" damping="45"/>
+      <joint name="T1_RED_1_base_y" type="slide" axis="0 1 0" limited="true" range="-3 3" damping="45"/>
+      <joint name="T1_RED_1_base_yaw" type="hinge" axis="0 0 1" limited="true" range="-7 7" damping="20"/>
+      <body name="T1_RED_1_torso" pos="0 0 0.98">
+        <inertial pos="0 0 0" mass="18" diaginertia="0.32 0.28 0.18"/>
+        <geom name="T1_RED_1_torso_geom" type="box" size="0.13 0.09 0.18" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
+
+        <geom name="T1_RED_1_mesh_Trunk" type="mesh" mesh="T1_Trunk" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+        <geom name="T1_RED_1_mesh_Logo" type="mesh" mesh="T1_Logo" rgba="0.05 0.05 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+
+            <geom name="T1_RED_1_visual_torso_shell" type="ellipsoid" size="0.155 0.105 0.195" pos="0.015 0 0.015" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_chest_panel" type="box" size="0.014 0.075 0.085" pos="0.155 0 0.045" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_pelvis_shell" type="ellipsoid" size="0.125 0.09 0.06" pos="0 0 -0.245" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_left_shoulder_shell" type="sphere" size="0.055" pos="0.035 0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_right_shoulder_shell" type="sphere" size="0.055" pos="0.035 -0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_head_neck" type="capsule" fromto="0.02 0 0.222 0.02 0 0.275" size="0.035" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_head_shell" type="ellipsoid" size="0.088 0.074 0.083" pos="0.035 0 0.325" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_visor" type="box" size="0.012 0.058 0.020" pos="0.115 0 0.333" rgba="0.01 0.025 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_left_ear_panel" type="sphere" size="0.025" pos="0.035 0.071 0.328" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_right_ear_panel" type="sphere" size="0.025" pos="0.035 -0.071 0.328" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+        <body name="T1_RED_1_head_mount" pos="0.03 0 0.24">
+          <joint name="RED1_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1.5"/>
+          <inertial pos="0 0 0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_1_mesh_H1" type="mesh" mesh="T1_H1" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_1_head" pos="0 0 0.06">
+            <joint name="RED1_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1.5"/>
+            <geom name="T1_RED_1_head_geom" type="sphere" size="0.075" rgba="0.9 0.9 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_1_mesh_H2" type="mesh" mesh="T1_H2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          </body>
+        </body>
+        <body name="T1_RED_1_waist" pos="0 0 -0.22">
+          <joint name="RED1_Waist" type="hinge" axis="0 0 1" range="-0.6 0.6" damping="2"/>
+          <geom name="T1_RED_1_waist_geom" type="box" size="0.11 0.085 0.055" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+          <geom name="T1_RED_1_mesh_Waist" type="mesh" mesh="T1_Waist" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_1_left_hip_pitch" pos="0 0.072 -0.055">
+            <joint name="RED1_Left_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_RED_1_mesh_Hip_Pitch_Left" type="mesh" mesh="T1_Hip_Pitch_Left" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_1_left_hip_roll" pos="0 0 -0.02">
+              <joint name="RED1_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_RED_1_mesh_Hip_Roll_Left" type="mesh" mesh="T1_Hip_Roll_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_RED_1_left_hip_yaw" pos="0 0 -0.02">
+                <joint name="RED1_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_RED_1_left_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_RED_1_mesh_Hip_Yaw_Left" type="mesh" mesh="T1_Hip_Yaw_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_RED_1_visual_left_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_RED_1_left_shin" pos="0 0 -0.28">
+                  <joint name="RED1_Left_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_RED_1_left_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_RED_1_mesh_Shank_Left" type="mesh" mesh="T1_Shank_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_1_visual_left_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_1_visual_left_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_RED_1_left_ankle" pos="0 0 -0.25">
+                    <joint name="RED1_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_RED_1_mesh_Ankle_Cross_Left" type="mesh" mesh="T1_Ankle_Cross_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_RED_1_left_foot" pos="0.055 0 -0.035">
+                      <joint name="RED1_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_RED_1_LEFT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_RED_1_mesh_left_foot_link" type="mesh" mesh="T1_left_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_RED_1_visual_left_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="RED1_LEFT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+          <body name="T1_RED_1_right_hip_pitch" pos="0 -0.072 -0.055">
+            <joint name="RED1_Right_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_RED_1_mesh_Hip_Pitch_Right" type="mesh" mesh="T1_Hip_Pitch_Right" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_1_right_hip_roll" pos="0 0 -0.02">
+              <joint name="RED1_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_RED_1_mesh_Hip_Roll_Right" type="mesh" mesh="T1_Hip_Roll_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_RED_1_right_hip_yaw" pos="0 0 -0.02">
+                <joint name="RED1_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_RED_1_right_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_RED_1_mesh_Hip_Yaw_Right" type="mesh" mesh="T1_Hip_Yaw_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_RED_1_visual_right_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_RED_1_right_shin" pos="0 0 -0.28">
+                  <joint name="RED1_Right_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_RED_1_right_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_RED_1_mesh_Shank_Right" type="mesh" mesh="T1_Shank_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_1_visual_right_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_1_visual_right_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_RED_1_right_ankle" pos="0 0 -0.25">
+                    <joint name="RED1_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_RED_1_mesh_Ankle_Cross_Right" type="mesh" mesh="T1_Ankle_Cross_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_RED_1_right_foot" pos="0.055 0 -0.035">
+                      <joint name="RED1_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_RED_1_RIGHT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_RED_1_mesh_right_foot_link" type="mesh" mesh="T1_right_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_RED_1_visual_right_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="RED1_RIGHT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+        <body name="T1_RED_1_left_shoulder" pos="0.02 0.125 0.15">
+          <joint name="RED1_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_1_mesh_AL1" type="mesh" mesh="T1_AL1" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_1_left_upper_arm" pos="0 0.03 -0.08">
+            <joint name="RED1_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
+            <geom name="T1_RED_1_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_1_mesh_AL2" type="mesh" mesh="T1_AL2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_1_left_lower_arm" pos="0 0 -0.16">
+              <joint name="RED1_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="RED1_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_RED_1_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_RED_1_mesh_AL3" type="mesh" mesh="T1_AL3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_1_mesh_left_hand_link" type="mesh" mesh="T1_left_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_1_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+        <body name="T1_RED_1_right_shoulder" pos="0.02 -0.125 0.15">
+          <joint name="RED1_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_1_mesh_AR1" type="mesh" mesh="T1_AR1" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_1_right_upper_arm" pos="0 -0.03 -0.08">
+            <joint name="RED1_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
+            <geom name="T1_RED_1_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="0.75 0.03 0.04 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_1_mesh_AR2" type="mesh" mesh="T1_AR2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_1_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_1_right_lower_arm" pos="0 0 -0.16">
+              <joint name="RED1_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="RED1_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_RED_1_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_RED_1_mesh_AR3" type="mesh" mesh="T1_AR3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_1_mesh_right_hand_link" type="mesh" mesh="T1_right_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_1_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+    <body name="T1_RED_2_base" pos="-1.2500 1.2500 0">
+      <joint name="T1_RED_2_base_x" type="slide" axis="1 0 0" limited="true" range="-4 4" damping="45"/>
+      <joint name="T1_RED_2_base_y" type="slide" axis="0 1 0" limited="true" range="-3 3" damping="45"/>
+      <joint name="T1_RED_2_base_yaw" type="hinge" axis="0 0 1" limited="true" range="-7 7" damping="20"/>
+      <body name="T1_RED_2_torso" pos="0 0 0.98">
+        <inertial pos="0 0 0" mass="18" diaginertia="0.32 0.28 0.18"/>
+        <geom name="T1_RED_2_torso_geom" type="box" size="0.13 0.09 0.18" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
+
+        <geom name="T1_RED_2_mesh_Trunk" type="mesh" mesh="T1_Trunk" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+        <geom name="T1_RED_2_mesh_Logo" type="mesh" mesh="T1_Logo" rgba="0.05 0.05 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+
+            <geom name="T1_RED_2_visual_torso_shell" type="ellipsoid" size="0.155 0.105 0.195" pos="0.015 0 0.015" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_chest_panel" type="box" size="0.014 0.075 0.085" pos="0.155 0 0.045" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_pelvis_shell" type="ellipsoid" size="0.125 0.09 0.06" pos="0 0 -0.245" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_left_shoulder_shell" type="sphere" size="0.055" pos="0.035 0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_right_shoulder_shell" type="sphere" size="0.055" pos="0.035 -0.137 0.155" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_head_neck" type="capsule" fromto="0.02 0 0.222 0.02 0 0.275" size="0.035" rgba="0.025 0.03 0.04 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_head_shell" type="ellipsoid" size="0.088 0.074 0.083" pos="0.035 0 0.325" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_visor" type="box" size="0.012 0.058 0.020" pos="0.115 0 0.333" rgba="0.01 0.025 0.05 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_left_ear_panel" type="sphere" size="0.025" pos="0.035 0.071 0.328" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_right_ear_panel" type="sphere" size="0.025" pos="0.035 -0.071 0.328" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+
+        <body name="T1_RED_2_head_mount" pos="0.03 0 0.24">
+          <joint name="RED2_AAHead_yaw" type="hinge" axis="0 0 1" range="-1.57 1.57" damping="1.5"/>
+          <inertial pos="0 0 0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_2_mesh_H1" type="mesh" mesh="T1_H1" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_2_head" pos="0 0 0.06">
+            <joint name="RED2_Head_pitch" type="hinge" axis="0 1 0" range="-0.35 1.22" damping="1.5"/>
+            <geom name="T1_RED_2_head_geom" type="sphere" size="0.075" rgba="0.9 0.9 0.85 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_2_mesh_H2" type="mesh" mesh="T1_H2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          </body>
+        </body>
+        <body name="T1_RED_2_waist" pos="0 0 -0.22">
+          <joint name="RED2_Waist" type="hinge" axis="0 0 1" range="-0.6 0.6" damping="2"/>
+          <geom name="T1_RED_2_waist_geom" type="box" size="0.11 0.085 0.055" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+          <geom name="T1_RED_2_mesh_Waist" type="mesh" mesh="T1_Waist" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_2_left_hip_pitch" pos="0 0.072 -0.055">
+            <joint name="RED2_Left_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_RED_2_mesh_Hip_Pitch_Left" type="mesh" mesh="T1_Hip_Pitch_Left" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_2_left_hip_roll" pos="0 0 -0.02">
+              <joint name="RED2_Left_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_RED_2_mesh_Hip_Roll_Left" type="mesh" mesh="T1_Hip_Roll_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_RED_2_left_hip_yaw" pos="0 0 -0.02">
+                <joint name="RED2_Left_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_RED_2_left_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_RED_2_mesh_Hip_Yaw_Left" type="mesh" mesh="T1_Hip_Yaw_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_RED_2_visual_left_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_RED_2_left_shin" pos="0 0 -0.28">
+                  <joint name="RED2_Left_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_RED_2_left_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_RED_2_mesh_Shank_Left" type="mesh" mesh="T1_Shank_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_2_visual_left_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_2_visual_left_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_RED_2_left_ankle" pos="0 0 -0.25">
+                    <joint name="RED2_Left_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_RED_2_mesh_Ankle_Cross_Left" type="mesh" mesh="T1_Ankle_Cross_Left" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_RED_2_left_foot" pos="0.055 0 -0.035">
+                      <joint name="RED2_Left_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_RED_2_LEFT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_RED_2_mesh_left_foot_link" type="mesh" mesh="T1_left_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_RED_2_visual_left_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="RED2_LEFT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+          <body name="T1_RED_2_right_hip_pitch" pos="0 -0.072 -0.055">
+            <joint name="RED2_Right_Hip_Pitch" type="hinge" axis="0 1 0" range="-0.9 0.9" damping="2"/>
+            <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+            <geom name="T1_RED_2_mesh_Hip_Pitch_Right" type="mesh" mesh="T1_Hip_Pitch_Right" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_2_right_hip_roll" pos="0 0 -0.02">
+              <joint name="RED2_Right_Hip_Roll" type="hinge" axis="1 0 0" range="-0.45 0.45" damping="1.5"/>
+              <inertial pos="0 0 -0.01" mass="0.45" diaginertia="0.005 0.005 0.005"/>
+              <geom name="T1_RED_2_mesh_Hip_Roll_Right" type="mesh" mesh="T1_Hip_Roll_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <body name="T1_RED_2_right_hip_yaw" pos="0 0 -0.02">
+                <joint name="RED2_Right_Hip_Yaw" type="hinge" axis="0 0 1" range="-0.35 0.35" damping="1.5"/>
+                <geom name="T1_RED_2_right_thigh_geom" type="capsule" fromto="0 0 0 0 0 -0.28" size="0.04" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
+                <geom name="T1_RED_2_mesh_Hip_Yaw_Right" type="mesh" mesh="T1_Hip_Yaw_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <geom name="T1_RED_2_visual_right_thigh_shell" type="capsule" fromto="0.012 0 0.015 0.012 0 -0.245" size="0.054" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                <body name="T1_RED_2_right_shin" pos="0 0 -0.28">
+                  <joint name="RED2_Right_Knee_Pitch" type="hinge" axis="0 1 0" range="0 1.25" damping="2"/>
+                  <geom name="T1_RED_2_right_shin_geom" type="capsule" fromto="0 0 0 0 0 -0.25" size="0.036" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+                  <geom name="T1_RED_2_mesh_Shank_Right" type="mesh" mesh="T1_Shank_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_2_visual_right_knee_shell" type="sphere" size="0.052" pos="0.008 0 0.005" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <geom name="T1_RED_2_visual_right_shin_shell" type="capsule" fromto="0.012 0 -0.015 0.025 0 -0.225" size="0.046" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                  <body name="T1_RED_2_right_ankle" pos="0 0 -0.25">
+                    <joint name="RED2_Right_Ankle_Pitch" type="hinge" axis="0 1 0" range="-0.5 0.5" damping="1.5"/>
+                    <inertial pos="0 0 -0.01" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+                    <geom name="T1_RED_2_mesh_Ankle_Cross_Right" type="mesh" mesh="T1_Ankle_Cross_Right" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                    <body name="T1_RED_2_right_foot" pos="0.055 0 -0.035">
+                      <joint name="RED2_Right_Ankle_Roll" type="hinge" axis="1 0 0" range="-0.35 0.35" damping="1.2"/>
+                      <geom name="T1_RED_2_RIGHT_FOOT_SOLE" type="box" size="0.11 0.045 0.018" pos="0 0 0" rgba="0.02 0.02 0.02 1" contype="0" conaffinity="0" group="3"/>
+                      <geom name="T1_RED_2_mesh_right_foot_link" type="mesh" mesh="T1_right_foot_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="T1_RED_2_visual_right_foot_shell" type="box" size="0.122 0.052 0.028" pos="0.006 0 0.008" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+                      <geom name="RED2_RIGHT_FOOT_BALL_PROXY" type="box" size="0.10 0.043 0.027" pos="0.018 0 0.012" rgba="0.02 0.02 0.02 1" contype="4" conaffinity="2"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+        <body name="T1_RED_2_left_shoulder" pos="0.02 0.125 0.15">
+          <joint name="RED2_Left_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_2_mesh_AL1" type="mesh" mesh="T1_AL1" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_2_left_upper_arm" pos="0 0.03 -0.08">
+            <joint name="RED2_Left_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.74 1.57" damping="1.2"/>
+            <geom name="T1_RED_2_left_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_2_mesh_AL2" type="mesh" mesh="T1_AL2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_left_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_2_left_lower_arm" pos="0 0 -0.16">
+              <joint name="RED2_Left_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="RED2_Left_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_RED_2_left_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_RED_2_mesh_AL3" type="mesh" mesh="T1_AL3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_2_mesh_left_hand_link" type="mesh" mesh="T1_left_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_2_visual_left_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+        <body name="T1_RED_2_right_shoulder" pos="0.02 -0.125 0.15">
+          <joint name="RED2_Right_Shoulder_Pitch" type="hinge" axis="0 1 0" range="-1.2 1.2" damping="1.2"/>
+          <inertial pos="0 0 -0.02" mass="0.35" diaginertia="0.004 0.004 0.004"/>
+          <geom name="T1_RED_2_mesh_AR1" type="mesh" mesh="T1_AR1" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+          <body name="T1_RED_2_right_upper_arm" pos="0 -0.03 -0.08">
+            <joint name="RED2_Right_Shoulder_Roll" type="hinge" axis="1 0 0" range="-1.57 1.74" damping="1.2"/>
+            <geom name="T1_RED_2_right_upper_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.16" size="0.03" rgba="1 0.22 0.08 1" contype="0" conaffinity="0" group="3"/>
+            <geom name="T1_RED_2_mesh_AR2" type="mesh" mesh="T1_AR2" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <geom name="T1_RED_2_visual_right_upper_arm_shell" type="capsule" fromto="0 0 0 0 0 -0.15" size="0.039" rgba="0.92 0.95 0.96 1" contype="0" conaffinity="0" group="2" density="0"/>
+            <body name="T1_RED_2_right_lower_arm" pos="0 0 -0.16">
+              <joint name="RED2_Right_Elbow_Pitch" type="hinge" axis="0 1 0" range="-2.27 2.27" damping="1"/>
+              <joint name="RED2_Right_Elbow_Yaw" type="hinge" axis="0 0 1" range="-1 1" damping="1"/>
+              <geom name="T1_RED_2_right_lower_arm_geom" type="capsule" fromto="0 0 0 0 0 -0.14" size="0.026" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="3"/>
+              <geom name="T1_RED_2_mesh_AR3" type="mesh" mesh="T1_AR3" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_2_mesh_right_hand_link" type="mesh" mesh="T1_right_hand_link" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+              <geom name="T1_RED_2_visual_right_forearm_shell" type="capsule" fromto="0 0 0 0 0 -0.13" size="0.034" rgba="0.08 0.08 0.08 1" contype="0" conaffinity="0" group="2" density="0"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="T1_BLUE_1_base_x_act" joint="T1_BLUE_1_base_x" kp="260" ctrlrange="-4 4" forcerange="-140 140"/>
+    <position name="T1_BLUE_1_base_y_act" joint="T1_BLUE_1_base_y" kp="260" ctrlrange="-3 3" forcerange="-140 140"/>
+    <position name="T1_BLUE_1_base_yaw_act" joint="T1_BLUE_1_base_yaw" kp="240" ctrlrange="-7 7" forcerange="-140 140"/>
+    <position name="BLUE1_AAHead_yaw_act" joint="BLUE1_AAHead_yaw" kp="32" forcerange="-8 8"/>
+    <position name="BLUE1_Head_pitch_act" joint="BLUE1_Head_pitch" kp="32" forcerange="-8 8"/>
+    <position name="BLUE1_Left_Shoulder_Pitch_act" joint="BLUE1_Left_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="BLUE1_Left_Shoulder_Roll_act" joint="BLUE1_Left_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE1_Left_Elbow_Pitch_act" joint="BLUE1_Left_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="BLUE1_Left_Elbow_Yaw_act" joint="BLUE1_Left_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="BLUE1_Right_Shoulder_Pitch_act" joint="BLUE1_Right_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="BLUE1_Right_Shoulder_Roll_act" joint="BLUE1_Right_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE1_Right_Elbow_Pitch_act" joint="BLUE1_Right_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="BLUE1_Right_Elbow_Yaw_act" joint="BLUE1_Right_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="BLUE1_Waist_act" joint="BLUE1_Waist" kp="32" forcerange="-20 20"/>
+    <position name="BLUE1_Left_Hip_Pitch_act" joint="BLUE1_Left_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="BLUE1_Left_Hip_Roll_act" joint="BLUE1_Left_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="BLUE1_Left_Hip_Yaw_act" joint="BLUE1_Left_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="BLUE1_Left_Knee_Pitch_act" joint="BLUE1_Left_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="BLUE1_Left_Ankle_Pitch_act" joint="BLUE1_Left_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="BLUE1_Left_Ankle_Roll_act" joint="BLUE1_Left_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE1_Right_Hip_Pitch_act" joint="BLUE1_Right_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="BLUE1_Right_Hip_Roll_act" joint="BLUE1_Right_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="BLUE1_Right_Hip_Yaw_act" joint="BLUE1_Right_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="BLUE1_Right_Knee_Pitch_act" joint="BLUE1_Right_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="BLUE1_Right_Ankle_Pitch_act" joint="BLUE1_Right_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="BLUE1_Right_Ankle_Roll_act" joint="BLUE1_Right_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="T1_BLUE_2_base_x_act" joint="T1_BLUE_2_base_x" kp="260" ctrlrange="-4 4" forcerange="-140 140"/>
+    <position name="T1_BLUE_2_base_y_act" joint="T1_BLUE_2_base_y" kp="260" ctrlrange="-3 3" forcerange="-140 140"/>
+    <position name="T1_BLUE_2_base_yaw_act" joint="T1_BLUE_2_base_yaw" kp="240" ctrlrange="-7 7" forcerange="-140 140"/>
+    <position name="BLUE2_AAHead_yaw_act" joint="BLUE2_AAHead_yaw" kp="32" forcerange="-8 8"/>
+    <position name="BLUE2_Head_pitch_act" joint="BLUE2_Head_pitch" kp="32" forcerange="-8 8"/>
+    <position name="BLUE2_Left_Shoulder_Pitch_act" joint="BLUE2_Left_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="BLUE2_Left_Shoulder_Roll_act" joint="BLUE2_Left_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE2_Left_Elbow_Pitch_act" joint="BLUE2_Left_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="BLUE2_Left_Elbow_Yaw_act" joint="BLUE2_Left_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="BLUE2_Right_Shoulder_Pitch_act" joint="BLUE2_Right_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="BLUE2_Right_Shoulder_Roll_act" joint="BLUE2_Right_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE2_Right_Elbow_Pitch_act" joint="BLUE2_Right_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="BLUE2_Right_Elbow_Yaw_act" joint="BLUE2_Right_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="BLUE2_Waist_act" joint="BLUE2_Waist" kp="32" forcerange="-20 20"/>
+    <position name="BLUE2_Left_Hip_Pitch_act" joint="BLUE2_Left_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="BLUE2_Left_Hip_Roll_act" joint="BLUE2_Left_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="BLUE2_Left_Hip_Yaw_act" joint="BLUE2_Left_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="BLUE2_Left_Knee_Pitch_act" joint="BLUE2_Left_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="BLUE2_Left_Ankle_Pitch_act" joint="BLUE2_Left_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="BLUE2_Left_Ankle_Roll_act" joint="BLUE2_Left_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="BLUE2_Right_Hip_Pitch_act" joint="BLUE2_Right_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="BLUE2_Right_Hip_Roll_act" joint="BLUE2_Right_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="BLUE2_Right_Hip_Yaw_act" joint="BLUE2_Right_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="BLUE2_Right_Knee_Pitch_act" joint="BLUE2_Right_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="BLUE2_Right_Ankle_Pitch_act" joint="BLUE2_Right_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="BLUE2_Right_Ankle_Roll_act" joint="BLUE2_Right_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="T1_RED_1_base_x_act" joint="T1_RED_1_base_x" kp="260" ctrlrange="-4 4" forcerange="-140 140"/>
+    <position name="T1_RED_1_base_y_act" joint="T1_RED_1_base_y" kp="260" ctrlrange="-3 3" forcerange="-140 140"/>
+    <position name="T1_RED_1_base_yaw_act" joint="T1_RED_1_base_yaw" kp="240" ctrlrange="-7 7" forcerange="-140 140"/>
+    <position name="RED1_AAHead_yaw_act" joint="RED1_AAHead_yaw" kp="32" forcerange="-8 8"/>
+    <position name="RED1_Head_pitch_act" joint="RED1_Head_pitch" kp="32" forcerange="-8 8"/>
+    <position name="RED1_Left_Shoulder_Pitch_act" joint="RED1_Left_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="RED1_Left_Shoulder_Roll_act" joint="RED1_Left_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED1_Left_Elbow_Pitch_act" joint="RED1_Left_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="RED1_Left_Elbow_Yaw_act" joint="RED1_Left_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="RED1_Right_Shoulder_Pitch_act" joint="RED1_Right_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="RED1_Right_Shoulder_Roll_act" joint="RED1_Right_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED1_Right_Elbow_Pitch_act" joint="RED1_Right_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="RED1_Right_Elbow_Yaw_act" joint="RED1_Right_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="RED1_Waist_act" joint="RED1_Waist" kp="32" forcerange="-20 20"/>
+    <position name="RED1_Left_Hip_Pitch_act" joint="RED1_Left_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="RED1_Left_Hip_Roll_act" joint="RED1_Left_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="RED1_Left_Hip_Yaw_act" joint="RED1_Left_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="RED1_Left_Knee_Pitch_act" joint="RED1_Left_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="RED1_Left_Ankle_Pitch_act" joint="RED1_Left_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="RED1_Left_Ankle_Roll_act" joint="RED1_Left_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED1_Right_Hip_Pitch_act" joint="RED1_Right_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="RED1_Right_Hip_Roll_act" joint="RED1_Right_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="RED1_Right_Hip_Yaw_act" joint="RED1_Right_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="RED1_Right_Knee_Pitch_act" joint="RED1_Right_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="RED1_Right_Ankle_Pitch_act" joint="RED1_Right_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="RED1_Right_Ankle_Roll_act" joint="RED1_Right_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="T1_RED_2_base_x_act" joint="T1_RED_2_base_x" kp="260" ctrlrange="-4 4" forcerange="-140 140"/>
+    <position name="T1_RED_2_base_y_act" joint="T1_RED_2_base_y" kp="260" ctrlrange="-3 3" forcerange="-140 140"/>
+    <position name="T1_RED_2_base_yaw_act" joint="T1_RED_2_base_yaw" kp="240" ctrlrange="-7 7" forcerange="-140 140"/>
+    <position name="RED2_AAHead_yaw_act" joint="RED2_AAHead_yaw" kp="32" forcerange="-8 8"/>
+    <position name="RED2_Head_pitch_act" joint="RED2_Head_pitch" kp="32" forcerange="-8 8"/>
+    <position name="RED2_Left_Shoulder_Pitch_act" joint="RED2_Left_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="RED2_Left_Shoulder_Roll_act" joint="RED2_Left_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED2_Left_Elbow_Pitch_act" joint="RED2_Left_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="RED2_Left_Elbow_Yaw_act" joint="RED2_Left_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="RED2_Right_Shoulder_Pitch_act" joint="RED2_Right_Shoulder_Pitch" kp="32" forcerange="-24 24"/>
+    <position name="RED2_Right_Shoulder_Roll_act" joint="RED2_Right_Shoulder_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED2_Right_Elbow_Pitch_act" joint="RED2_Right_Elbow_Pitch" kp="32" forcerange="-16 16"/>
+    <position name="RED2_Right_Elbow_Yaw_act" joint="RED2_Right_Elbow_Yaw" kp="32" forcerange="-12 12"/>
+    <position name="RED2_Waist_act" joint="RED2_Waist" kp="32" forcerange="-20 20"/>
+    <position name="RED2_Left_Hip_Pitch_act" joint="RED2_Left_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="RED2_Left_Hip_Roll_act" joint="RED2_Left_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="RED2_Left_Hip_Yaw_act" joint="RED2_Left_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="RED2_Left_Knee_Pitch_act" joint="RED2_Left_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="RED2_Left_Ankle_Pitch_act" joint="RED2_Left_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="RED2_Left_Ankle_Roll_act" joint="RED2_Left_Ankle_Roll" kp="32" forcerange="-16 16"/>
+    <position name="RED2_Right_Hip_Pitch_act" joint="RED2_Right_Hip_Pitch" kp="32" forcerange="-40 40"/>
+    <position name="RED2_Right_Hip_Roll_act" joint="RED2_Right_Hip_Roll" kp="32" forcerange="-22 22"/>
+    <position name="RED2_Right_Hip_Yaw_act" joint="RED2_Right_Hip_Yaw" kp="32" forcerange="-18 18"/>
+    <position name="RED2_Right_Knee_Pitch_act" joint="RED2_Right_Knee_Pitch" kp="32" forcerange="-48 48"/>
+    <position name="RED2_Right_Ankle_Pitch_act" joint="RED2_Right_Ankle_Pitch" kp="32" forcerange="-20 20"/>
+    <position name="RED2_Right_Ankle_Roll_act" joint="RED2_Right_Ankle_Roll" kp="32" forcerange="-16 16"/>
+  </actuator>
+</mujoco>

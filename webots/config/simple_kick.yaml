@@ -1,0 +1,16 @@
+# Simple Kick Executor — Safe Initial Parameters
+# All values tuned for simulation; must be verified in Webots.
+
+approach_speed: 0.04        # m/s — speed when approaching ball
+alignment_speed: 0.08       # rad/s — yaw rate for alignment
+kick_speed: 0.08            # m/s — forward speed during kick action
+kick_duration: 0.30         # seconds — duration of kick forward motion
+max_kick_speed: 0.12        # m/s — absolute upper limit
+max_kick_duration: 0.50     # seconds — absolute upper limit
+behind_ball_distance: 0.20  # meters — distance behind ball for kick setup
+contact_distance: 0.14      # meters — ball must be within this range to kick
+yaw_tolerance: 0.12         # radians — alignment tolerance before kick
+ball_move_threshold: 0.05   # meters — minimum ball displacement for success
+max_attempts: 3             # max kick attempts per action
+stop_after: 0.5             # seconds — mandatory stop pause after each action
+recover_timeout: 10.0       # seconds — max time for recovery phase

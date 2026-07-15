@@ -1,0 +1,409 @@
+"""
+WorldState 数据结构与提供者
+============================
+定义足球场世界状态的完整数据模型，包括：
+- Ball: 足球的位置和速度
+- Robot: 机器人的位置、朝向、角色、队伍
+- Goal: 球门位置
+- WorldState: 完整世界快照
+- WorldStateProvider: 从仿真器读取数据并提供给决策层
+"""
+
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple, Dict
+from enum import Enum
+import math
+from common.config import (
+    FIELD_WIDTH, FIELD_HEIGHT, GOAL_WIDTH,
+    GOAL_X, OUR_GOAL_X, TEAM_BLUE, TEAM_YELLOW,
+    ROBOT_KICK_RANGE, POSSESSION_CONTESTED_RANGE
+)
+
+
+class Team(Enum):
+    """队伍枚举"""
+    BLUE = TEAM_BLUE
+    YELLOW = TEAM_YELLOW
+
+
+class RobotRole(Enum):
+    """机器人角色"""
+    BALL_CARRIER = "ball_carrier"   # 持球者 / lead
+    SUPPORTER = "supporter"          # 支援者 / assist
+    DEFENDER = "defender"            # 场上防守者
+    GOALKEEPER = "goalkeeper"        # 固定门将
+    IDLE = "idle"                    # 空闲
+
+
+@dataclass
+class Ball:
+    """足球状态"""
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0              # 高度 (Mock 模式默认 0, 仿真/实机提供真实值)
+    vx: float = 0.0
+    vy: float = 0.0
+    vz: float = 0.0              # 垂直速度
+
+    @property
+    def position(self) -> Tuple[float, float]:
+        return (self.x, self.y)
+
+    @property
+    def position_3d(self) -> Tuple[float, float, float]:
+        """3D 位置 (x, y, z)"""
+        return (self.x, self.y, self.z)
+
+    @property
+    def speed(self) -> float:
+        return math.sqrt(self.vx ** 2 + self.vy ** 2)
+
+    @property
+    def speed_3d(self) -> float:
+        """3D 速率"""
+        return math.sqrt(self.vx ** 2 + self.vy ** 2 + self.vz ** 2)
+
+    @property
+    def is_moving(self) -> bool:
+        from common.config import BALL_MIN_VELOCITY
+        return self.speed > BALL_MIN_VELOCITY
+
+
+@dataclass
+class Robot:
+    """机器人状态"""
+    id: int
+    team: Team
+    x: float
+    y: float
+    z: float = 0.0                 # 高度 (Mock 模式默认 0)
+    theta: float = 0.0              # 朝向角度 (弧度, 0=右/东)
+    role: RobotRole = RobotRole.IDLE
+    kick_cooldown: float = 0.0      # 踢球冷却剩余时间
+
+    @property
+    def position(self) -> Tuple[float, float]:
+        return (self.x, self.y)
+
+    @property
+    def position_3d(self) -> Tuple[float, float, float]:
+        """3D 位置 (x, y, z)"""
+        return (self.x, self.y, self.z)
+
+
+@dataclass
+class Goal:
+    """球门"""
+    x: float                        # 球门中心 X
+    y_min: float                    # 球门底部 Y
+    y_max: float                    # 球门顶部 Y
+
+    @property
+    def center(self) -> Tuple[float, float]:
+        return (self.x, (self.y_min + self.y_max) / 2)
+
+    @property
+    def width(self) -> float:
+        return self.y_max - self.y_min
+
+
+@dataclass
+class WorldState:
+    """
+    完整世界状态快照 (每帧不可变)
+    蓝队 = 己方 (teammates), 黄队 = 对手 (opponents)
+    """
+    ball: Ball
+    teammates: List[Robot]          # 蓝队机器人
+    opponents: List[Robot]          # 黄队机器人
+    our_goal: Goal                  # 蓝队球门 (左)
+    opponent_goal: Goal             # 黄队球门 (右)
+    field_width: float = FIELD_WIDTH
+    field_height: float = FIELD_HEIGHT
+    timestamp: float = 0.0
+
+    # --- 查询方法 ---
+
+    def get_robot_by_id(self, robot_id: int) -> Optional[Robot]:
+        """根据 ID 查找机器人"""
+        for r in self.teammates + self.opponents:
+            if r.id == robot_id:
+                return r
+        return None
+
+    def all_robots(self) -> List[Robot]:
+        """所有机器人"""
+        return self.teammates + self.opponents
+
+    def closest_teammate_to_ball(self) -> Optional[Robot]:
+        """离球最近的己方机器人"""
+        if not self.teammates:
+            return None
+        return min(self.teammates, key=lambda r: self._dist(r, self.ball))
+
+    def closest_opponent_to_ball(self) -> Optional[Robot]:
+        """离球最近的对手"""
+        if not self.opponents:
+            return None
+        return min(self.opponents, key=lambda r: self._dist(r, self.ball))
+
+    def distance(self, a, b) -> float:
+        """
+        计算两点距离
+        a, b 可以是 Robot, Ball, 或 (x, y) 元组
+        """
+        p1 = (a.x, a.y) if hasattr(a, 'x') else a
+        p2 = (b.x, b.y) if hasattr(b, 'x') else b
+        return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+    def is_in_field(self, x: float, y: float) -> bool:
+        """检查坐标是否在场地内"""
+        return (
+            -self.field_width / 2 <= x <= self.field_width / 2 and
+            -self.field_height / 2 <= y <= self.field_height / 2
+        )
+
+    def has_possession(self, robot_id: int) -> bool:
+        """检查机器人是否控制球 (在踢球范围内)"""
+        robot = self.get_robot_by_id(robot_id)
+        if robot is None:
+            return False
+        return self.distance(robot, self.ball) <= ROBOT_KICK_RANGE
+
+    def team_has_possession(self) -> bool:
+        """己方是否比对方更接近球 (争球中略占优也算失控)"""
+        mate = self.closest_teammate_to_ball()
+        opp = self.closest_opponent_to_ball()
+        if mate is None:
+            return False
+        if opp is None:
+            return True
+        d_mate = self.distance(mate, self.ball)
+        d_opp = self.distance(opp, self.ball)
+        return d_mate + POSSESSION_CONTESTED_RANGE * 0.5 < d_opp
+
+    def perspective_for(self, team: "Team") -> "WorldState":
+        """
+        切换到某队视角: teammates=己方, opponents=对方,
+        our_goal=本方球门, opponent_goal=攻击球门。
+        蓝队视角与当前快照相同; 黄队视角对调双方与球门。
+        """
+        if team == Team.BLUE:
+            return WorldState(
+                ball=self.ball,
+                teammates=list(self.teammates),
+                opponents=list(self.opponents),
+                our_goal=self.our_goal,
+                opponent_goal=self.opponent_goal,
+                field_width=self.field_width,
+                field_height=self.field_height,
+                timestamp=self.timestamp,
+            )
+        return WorldState(
+            ball=self.ball,
+            teammates=list(self.opponents),
+            opponents=list(self.teammates),
+            our_goal=self.opponent_goal,
+            opponent_goal=self.our_goal,
+            field_width=self.field_width,
+            field_height=self.field_height,
+            timestamp=self.timestamp,
+        )
+
+    @staticmethod
+    def _dist(a, b) -> float:
+        """内部距离计算"""
+        return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+
+
+class WorldStateProvider:
+    """
+    WorldState 提供者
+    从仿真器读取数据，构建 WorldState 快照
+    """
+
+    def __init__(self, simulator=None):
+        """
+        Args:
+            simulator: Simulator 实例 (实际运行时) 或 None (Mock 模式)
+        """
+        self._sim = simulator
+        self._mock_ws = None
+
+    def get(self) -> WorldState:
+        """获取当前世界状态"""
+        if self._sim is not None:
+            return self._from_simulator()
+        elif self._mock_ws is not None:
+            ws = self._mock_ws
+            ws.timestamp += 1.0 / 30.0  # 模拟时间推进
+            return ws
+        else:
+            return create_default_world_state()
+
+    def set_mock(self, ws: WorldState):
+        """设置 Mock 世界状态 (用于测试)"""
+        self._mock_ws = ws
+
+    def _from_simulator(self) -> WorldState:
+        """从仿真器构建 WorldState"""
+        sim = self._sim
+        # 从仿真器读取原始数据
+        ball_raw = sim.get_ball()
+        blue_raw = sim.get_robots(Team.BLUE)
+        yellow_raw = sim.get_robots(Team.YELLOW)
+
+        ball = Ball(x=ball_raw.x, y=ball_raw.y,
+                    z=getattr(ball_raw, 'z', 0.0),
+                    vx=ball_raw.vx, vy=ball_raw.vy,
+                    vz=getattr(ball_raw, 'vz', 0.0))
+
+        teammates = [Robot(id=r.id, team=Team.BLUE,
+                           x=r.x, y=r.y,
+                           z=getattr(r, 'z', 0.0),
+                           theta=r.theta,
+                           role=r.role, kick_cooldown=r.kick_cooldown)
+                     for r in blue_raw]
+
+        opponents = [Robot(id=r.id, team=Team.YELLOW,
+                           x=r.x, y=r.y,
+                           z=getattr(r, 'z', 0.0),
+                           theta=r.theta,
+                           role=r.role, kick_cooldown=r.kick_cooldown)
+                     for r in yellow_raw]
+
+        return WorldState(
+            ball=ball,
+            teammates=teammates,
+            opponents=opponents,
+            our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+            opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+            timestamp=sim.timestamp
+        )
+
+
+# ============================================================
+# Mock 数据工厂
+# ============================================================
+
+def create_default_world_state() -> WorldState:
+    """创建默认开球 WorldState"""
+    return WorldState(
+        ball=Ball(x=0.0, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-1.0, y=0.0, theta=0.0),
+            Robot(id=1, team=Team.BLUE, x=-2.0, y=1.5, theta=0.0),
+            Robot(id=2, team=Team.BLUE, x=-2.5, y=0.0, theta=0.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=1.0, y=0.0, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=2.0, y=-1.5, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=2.5, y=0.0, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_pass_scenario() -> WorldState:
+    """传球场景: 0号持球, 1号在有利位置等待接球"""
+    return WorldState(
+        ball=Ball(x=-2.0, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-2.0, y=0.2, theta=0.0),
+            Robot(id=1, team=Team.BLUE, x=0.0, y=1.5, theta=1.57),
+            Robot(id=2, team=Team.BLUE, x=-3.5, y=0.0, theta=0.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=3.0, y=0.0, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=1.5, y=-2.0, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=3.5, y=0.0, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_pass_scenario_2v0() -> WorldState:
+    """最小传球场景: 2 个己方圆柱机器人, 无对手"""
+    return WorldState(
+        ball=Ball(x=-2.0, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-2.0, y=0.2, theta=0.0),
+            Robot(id=1, team=Team.BLUE, x=0.0, y=1.5, theta=1.57),
+        ],
+        opponents=[],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_shoot_scenario() -> WorldState:
+    """射门场景: 0号在对方半场, 持球可射门"""
+    return WorldState(
+        ball=Ball(x=2.5, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=2.5, y=0.2, theta=0.0),
+            Robot(id=1, team=Team.BLUE, x=1.0, y=1.5, theta=0.0),
+            Robot(id=2, team=Team.BLUE, x=-1.0, y=0.0, theta=0.0),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=3.5, y=1.0, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=2.0, y=-2.0, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=4.0, y=0.0, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_shoot_angle_scenario(
+    ball_x: float = 3.0,
+    ball_y: float = 0.0,
+    behind: float = 0.22,
+) -> WorldState:
+    """
+    单人多角度射门实验场景:
+    仅 1 个蓝队球员 + 球 + 右侧球门, 无队友/对手。
+    """
+    kick_dir = math.atan2(0.0 - ball_y, GOAL_X - ball_x)
+    rx = ball_x - math.cos(kick_dir) * behind
+    ry = ball_y - math.sin(kick_dir) * behind
+    return WorldState(
+        ball=Ball(x=ball_x, y=ball_y),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=rx, y=ry, theta=kick_dir, role=RobotRole.BALL_CARRIER),
+        ],
+        opponents=[],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+def create_threat_scenario() -> WorldState:
+    """防守威胁场景: 对手持球接近己方球门"""
+    return WorldState(
+        ball=Ball(x=-3.0, y=0.0),
+        teammates=[
+            Robot(id=0, team=Team.BLUE, x=-1.0, y=0.0, theta=3.14),
+            Robot(id=1, team=Team.BLUE, x=-2.0, y=1.5, theta=3.14),
+            Robot(id=2, team=Team.BLUE, x=-3.5, y=0.0, theta=3.14),
+        ],
+        opponents=[
+            Robot(id=10, team=Team.YELLOW, x=-3.0, y=0.2, theta=3.14),
+            Robot(id=11, team=Team.YELLOW, x=1.0, y=-1.5, theta=3.14),
+            Robot(id=12, team=Team.YELLOW, x=2.0, y=0.0, theta=3.14),
+        ],
+        our_goal=Goal(x=OUR_GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+        opponent_goal=Goal(x=GOAL_X, y_min=-GOAL_WIDTH / 2, y_max=GOAL_WIDTH / 2),
+    )
+
+
+# 场景注册表
+SCENARIOS = {
+    "default": create_default_world_state,
+    "pass": create_pass_scenario,
+    "shoot": create_shoot_scenario,
+    "shoot_angle": create_shoot_angle_scenario,
+    "threat": create_threat_scenario,
+}

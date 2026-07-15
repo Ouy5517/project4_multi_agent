@@ -1,0 +1,33 @@
+{
+  "scenario_name": "dribble_when_marked",
+  "timestamp": 2.0,
+  "ball": {"x": -0.8, "y": 0.0, "vx": 0.0, "vy": 0.0},
+  "robots": [
+    {
+      "robot_id": "T1_A",
+      "team": "blue",
+      "x": -0.8,
+      "y": 0.0,
+      "theta": 0.0,
+      "role": "attacker",
+      "has_ball": true
+    },
+    {
+      "robot_id": "T1_B",
+      "team": "blue",
+      "x": 0.4,
+      "y": 0.9,
+      "theta": 0.0,
+      "role": "support",
+      "has_ball": false
+    }
+  ],
+  "opponents": [
+    {"opponent_id": "OP_1", "x": 0.55, "y": 0.85},
+    {"opponent_id": "OP_2", "x": 2.2, "y": -0.4}
+  ],
+  "our_goal": {"x": -3.0, "y": 0.0},
+  "enemy_goal": {"x": 3.0, "y": 0.0},
+  "field_width": 6.0,
+  "field_height": 4.0
+}

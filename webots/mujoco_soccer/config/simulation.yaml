@@ -1,0 +1,20 @@
+timestep: 0.005
+max_simulation_time: 120.0
+field:
+  x_min: -3.5
+  x_max: 3.5
+  y_min: -2.5
+  y_max: 2.5
+goals:
+  blue: [-3.35, 0.0]
+  red: [3.35, 0.0]
+render:
+  width: 1280
+  height: 720
+  fps: 30
+action:
+  backend: assisted_planar
+  available_backends:
+    - assisted_planar
+    - trajectory_joint
+    - rl_policy

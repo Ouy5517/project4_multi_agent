@@ -1,0 +1,23 @@
+frequencies:
+  low_level_control_hz: 100
+  agent_decision_hz: 20
+  team_coordination_hz: 10
+roles:
+  role_min_hold_seconds: 0.8
+  role_switch_improvement_ratio: 0.20
+  possession_hold_seconds: 0.35
+  action_min_commit_seconds: 0.30
+motion:
+  normal_speed: 0.48
+  chase_speed: 0.60
+  support_speed: 0.50
+  fine_approach: 0.16
+  defensive_shuffle: 0.30
+  turn_rate_deg_s: 85
+avoidance:
+  preferred_distance: 0.50
+  minimum_distance: 0.36
+arbitration:
+  kick_lock_max_seconds: 1.2
+seed:
+  default: 42

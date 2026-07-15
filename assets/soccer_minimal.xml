@@ -1,0 +1,57 @@
+<mujoco model="soccer_minimal">
+  <!-- 最小 3D 传球场景: 2 圆柱机器人 + 1 足球 -->
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <visual>
+    <headlight diffuse="0.85 0.85 0.85" ambient="0.3 0.3 0.3"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient"
+             rgb1="0.35 0.55 0.75" rgb2="0.05 0.05 0.15" width="512" height="512"/>
+    <texture name="texplane" type="2d" builtin="checker"
+             rgb1="0.25 0.55 0.25" rgb2="0.15 0.45 0.15" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texrepeat="6 4" reflectance="0.1"/>
+    <material name="matgoal" rgba="1 1 1 0.35"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 8" dir="0 0 -1" diffuse="1 1 1" castshadow="true"/>
+    <light pos="4 3 6" dir="-0.5 -0.3 -1" diffuse="0.4 0.4 0.4"/>
+
+    <!-- 9m x 6m 场地 (half-size 4.5 x 3) -->
+    <geom name="floor" type="plane" size="5 4 0.1" material="matplane"/>
+
+    <!-- 边线 (visual) -->
+    <geom type="box" pos="0 3 0.005" size="4.6 0.02 0.005" rgba="1 1 1 0.6" contype="0" conaffinity="0"/>
+    <geom type="box" pos="0 -3 0.005" size="4.6 0.02 0.005" rgba="1 1 1 0.6" contype="0" conaffinity="0"/>
+    <geom type="box" pos="4.5 0 0.005" size="0.02 3 0.005" rgba="1 1 1 0.6" contype="0" conaffinity="0"/>
+    <geom type="box" pos="-4.5 0 0.005" size="0.02 3 0.005" rgba="1 1 1 0.6" contype="0" conaffinity="0"/>
+    <!-- 中线 -->
+    <geom type="box" pos="0 0 0.005" size="0.02 3 0.005" rgba="1 1 1 0.4" contype="0" conaffinity="0"/>
+
+    <!-- 球门示意 -->
+    <geom name="goal_left" type="box" pos="-4.5 0 0.5" size="0.05 1 0.5" material="matgoal" contype="0" conaffinity="0"/>
+    <geom name="goal_right" type="box" pos="4.5 0 0.5" size="0.05 1 0.5" material="matgoal" contype="0" conaffinity="0"/>
+
+    <!-- 足球 (freejoint, 位置由 Python 同步) -->
+    <body name="ball" pos="-2 0 0.05">
+      <freejoint name="ball_joint"/>
+      <geom name="ball_geom" type="sphere" size="0.05"
+            rgba="1 1 1 1" mass="0.045" friction="0.5 0.5 0.001"/>
+    </body>
+
+    <!-- 机器人 0 / 1: mocap 圆柱, 由 Python 同步 -->
+    <body name="robot_0" mocap="true" pos="-2 0 0.15">
+      <geom type="cylinder" size="0.15 0.15" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      <!-- 朝向指示 -->
+      <geom type="capsule" fromto="0 0 0 0.2 0 0" size="0.03" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+    </body>
+
+    <body name="robot_1" mocap="true" pos="0 1.5 0.15">
+      <geom type="cylinder" size="0.15 0.15" rgba="0.2 0.45 0.95 1" contype="0" conaffinity="0"/>
+      <geom type="capsule" fromto="0 0 0 0.2 0 0" size="0.03" rgba="1 1 1 0.9" contype="0" conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>
